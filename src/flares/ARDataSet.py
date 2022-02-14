@@ -22,6 +22,3 @@ class ARDataSet:
             self.baseline.append(ar.get_baseline()[0])
             self.sharps.append(ar.get_sharps()[0])
             self.sharps.append(ar.get_graph()[0])
-
-
-
