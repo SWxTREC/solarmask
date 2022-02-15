@@ -158,12 +158,12 @@ class ActiveRegion(ActiveRegionParameters):
         self.assert_masks()
         cmap = plt.get_cmap(&#39;viridis&#39;)
 
-        color_keys = {&#34;penumbra&#34; : 1, &#34;umbra&#34; : 2, &#34;neutral line&#34; : 3}
+        color_keys = {&#34;penumbra&#34; : 1.0, &#34;umbra&#34; : 0.5714285714285714, &#34;neutral line&#34; : 0.0}
         values = [color_keys[x[1][&#34;type&#34;]] for x in self.__G.nodes.data()]
         pos = nx.get_node_attributes(self.__G, &#34;pos&#34;)
 
         # Plot with the original continuum
-        axs_cont.imshow(self.cont, cmap = &#34;gray&#34;)
+        axs_cont.imshow(self.cont, cmap = cmap)
         nx.draw(self.__G, pos, axs_cont, node_size = 100, cmap = cmap, node_color = values, with_labels = False, font_color = &#34;white&#34;)
 
         # Plot the one next to it
@@ -171,7 +171,8 @@ class ActiveRegion(ActiveRegionParameters):
         mask[self.__umbra] = color_keys[&#34;umbra&#34;]
         mask[self.__pumbra] = color_keys[&#34;penumbra&#34;]
         mask[self.__nl] = color_keys[&#34;neutral line&#34;]
-        axs_seg.imshow(mask)
+        mask[self.__background] = np.nan
+        axs_seg.imshow(mask, cmap = cmap)
         nx.draw(self.__G, pos, axs_seg, node_size = 100, cmap = cmap, node_color = values, with_labels = False, font_color = &#34;white&#34;)
 
 
@@ -193,6 +194,7 @@ class ActiveRegion(ActiveRegionParameters):
         color_keys = {&#34;penumbra&#34; : 1.0, &#34;umbra&#34; : 0.5714285714285714, &#34;neutral line&#34; : 0.0}
         values = [color_keys.get(x[1][&#34;type&#34;], 0.25) for x in self.__G.nodes.data()]
         pos = nx.get_node_attributes(self.__G, &#34;pos&#34;)
+        pos = {i : (pos[i][0], -pos[i][1]) for i in pos} # Flip them because of imshow
 
         nx.draw(self.__G, pos, axs, node_size = 100, cmap = cmap, node_color = values, with_labels = False, font_color = &#34;white&#34;)
 
@@ -323,7 +325,7 @@ class ActiveRegion(ActiveRegionParameters):
 
             self.__background = background
 
-    def assert_neutral_lines(self, radius = 3, thresh = 150):
+    def assert_neutral_lines(self, radius = 5, thresh = 150):
         &#34;&#34;&#34;Generates neutral lines using morphological operations and a flux threshold
         finds neutral lines using the method described by Schrijver in
         
@@ -525,7 +527,7 @@ class ActiveRegion(ActiveRegionParameters):
                 bordered.append(i)
         return np.delete(labels, bordered), np.delete(sizes, bordered)
 
-    def __remove_percentage_max(self, labeled, labels, sizes, p = 0.1):
+    def __remove_percentage_max(self, labeled, labels, sizes, p = 0.01):
         &#34;&#34;&#34;Removes pixels that border the edge
 
         Args:
@@ -788,12 +790,12 @@ could be turned into a ticket and fixed, but for the time being I am ignoring th
         self.assert_masks()
         cmap = plt.get_cmap(&#39;viridis&#39;)
 
-        color_keys = {&#34;penumbra&#34; : 1, &#34;umbra&#34; : 2, &#34;neutral line&#34; : 3}
+        color_keys = {&#34;penumbra&#34; : 1.0, &#34;umbra&#34; : 0.5714285714285714, &#34;neutral line&#34; : 0.0}
         values = [color_keys[x[1][&#34;type&#34;]] for x in self.__G.nodes.data()]
         pos = nx.get_node_attributes(self.__G, &#34;pos&#34;)
 
         # Plot with the original continuum
-        axs_cont.imshow(self.cont, cmap = &#34;gray&#34;)
+        axs_cont.imshow(self.cont, cmap = cmap)
         nx.draw(self.__G, pos, axs_cont, node_size = 100, cmap = cmap, node_color = values, with_labels = False, font_color = &#34;white&#34;)
 
         # Plot the one next to it
@@ -801,7 +803,8 @@ could be turned into a ticket and fixed, but for the time being I am ignoring th
         mask[self.__umbra] = color_keys[&#34;umbra&#34;]
         mask[self.__pumbra] = color_keys[&#34;penumbra&#34;]
         mask[self.__nl] = color_keys[&#34;neutral line&#34;]
-        axs_seg.imshow(mask)
+        mask[self.__background] = np.nan
+        axs_seg.imshow(mask, cmap = cmap)
         nx.draw(self.__G, pos, axs_seg, node_size = 100, cmap = cmap, node_color = values, with_labels = False, font_color = &#34;white&#34;)
 
 
@@ -823,6 +826,7 @@ could be turned into a ticket and fixed, but for the time being I am ignoring th
         color_keys = {&#34;penumbra&#34; : 1.0, &#34;umbra&#34; : 0.5714285714285714, &#34;neutral line&#34; : 0.0}
         values = [color_keys.get(x[1][&#34;type&#34;], 0.25) for x in self.__G.nodes.data()]
         pos = nx.get_node_attributes(self.__G, &#34;pos&#34;)
+        pos = {i : (pos[i][0], -pos[i][1]) for i in pos} # Flip them because of imshow
 
         nx.draw(self.__G, pos, axs, node_size = 100, cmap = cmap, node_color = values, with_labels = False, font_color = &#34;white&#34;)
 
@@ -953,7 +957,7 @@ could be turned into a ticket and fixed, but for the time being I am ignoring th
 
             self.__background = background
 
-    def assert_neutral_lines(self, radius = 3, thresh = 150):
+    def assert_neutral_lines(self, radius = 5, thresh = 150):
         &#34;&#34;&#34;Generates neutral lines using morphological operations and a flux threshold
         finds neutral lines using the method described by Schrijver in
         
@@ -1155,7 +1159,7 @@ could be turned into a ticket and fixed, but for the time being I am ignoring th
                 bordered.append(i)
         return np.delete(labels, bordered), np.delete(sizes, bordered)
 
-    def __remove_percentage_max(self, labeled, labels, sizes, p = 0.1):
+    def __remove_percentage_max(self, labeled, labels, sizes, p = 0.01):
         &#34;&#34;&#34;Removes pixels that border the edge
 
         Args:
@@ -1284,7 +1288,7 @@ generated, this function does nothing</p></div>
 </details>
 </dd>
 <dt id="flares.active_region.ActiveRegion.assert_neutral_lines"><code class="name flex">
-<span>def <span class="ident">assert_neutral_lines</span></span>(<span>self, radius=3, thresh=150)</span>
+<span>def <span class="ident">assert_neutral_lines</span></span>(<span>self, radius=5, thresh=150)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Generates neutral lines using morphological operations and a flux threshold
@@ -1302,7 +1306,7 @@ finds neutral lines using the method described by Schrijver in</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def assert_neutral_lines(self, radius = 3, thresh = 150):
+<pre><code class="python">def assert_neutral_lines(self, radius = 5, thresh = 150):
     &#34;&#34;&#34;Generates neutral lines using morphological operations and a flux threshold
     finds neutral lines using the method described by Schrijver in
     
@@ -1509,6 +1513,7 @@ if the difference between maximum and minimum flux in the mask is greater than 2
     color_keys = {&#34;penumbra&#34; : 1.0, &#34;umbra&#34; : 0.5714285714285714, &#34;neutral line&#34; : 0.0}
     values = [color_keys.get(x[1][&#34;type&#34;], 0.25) for x in self.__G.nodes.data()]
     pos = nx.get_node_attributes(self.__G, &#34;pos&#34;)
+    pos = {i : (pos[i][0], -pos[i][1]) for i in pos} # Flip them because of imshow
 
     nx.draw(self.__G, pos, axs, node_size = 100, cmap = cmap, node_color = values, with_labels = False, font_color = &#34;white&#34;)
 
@@ -1703,12 +1708,12 @@ to be close - there are a few good examples of nodes that work well - see docume
     self.assert_masks()
     cmap = plt.get_cmap(&#39;viridis&#39;)
 
-    color_keys = {&#34;penumbra&#34; : 1, &#34;umbra&#34; : 2, &#34;neutral line&#34; : 3}
+    color_keys = {&#34;penumbra&#34; : 1.0, &#34;umbra&#34; : 0.5714285714285714, &#34;neutral line&#34; : 0.0}
     values = [color_keys[x[1][&#34;type&#34;]] for x in self.__G.nodes.data()]
     pos = nx.get_node_attributes(self.__G, &#34;pos&#34;)
 
     # Plot with the original continuum
-    axs_cont.imshow(self.cont, cmap = &#34;gray&#34;)
+    axs_cont.imshow(self.cont, cmap = cmap)
     nx.draw(self.__G, pos, axs_cont, node_size = 100, cmap = cmap, node_color = values, with_labels = False, font_color = &#34;white&#34;)
 
     # Plot the one next to it
@@ -1716,7 +1721,8 @@ to be close - there are a few good examples of nodes that work well - see docume
     mask[self.__umbra] = color_keys[&#34;umbra&#34;]
     mask[self.__pumbra] = color_keys[&#34;penumbra&#34;]
     mask[self.__nl] = color_keys[&#34;neutral line&#34;]
-    axs_seg.imshow(mask)
+    mask[self.__background] = np.nan
+    axs_seg.imshow(mask, cmap = cmap)
     nx.draw(self.__G, pos, axs_seg, node_size = 100, cmap = cmap, node_color = values, with_labels = False, font_color = &#34;white&#34;)
 
 

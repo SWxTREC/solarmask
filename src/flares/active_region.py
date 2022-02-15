@@ -129,12 +129,12 @@ class ActiveRegion(ActiveRegionParameters):
         self.assert_masks()
         cmap = plt.get_cmap('viridis')
 
-        color_keys = {"penumbra" : 1, "umbra" : 2, "neutral line" : 3}
+        color_keys = {"penumbra" : 1.0, "umbra" : 0.5714285714285714, "neutral line" : 0.0}
         values = [color_keys[x[1]["type"]] for x in self.__G.nodes.data()]
         pos = nx.get_node_attributes(self.__G, "pos")
 
         # Plot with the original continuum
-        axs_cont.imshow(self.cont, cmap = "gray")
+        axs_cont.imshow(self.cont, cmap = cmap)
         nx.draw(self.__G, pos, axs_cont, node_size = 100, cmap = cmap, node_color = values, with_labels = False, font_color = "white")
 
         # Plot the one next to it
@@ -142,7 +142,8 @@ class ActiveRegion(ActiveRegionParameters):
         mask[self.__umbra] = color_keys["umbra"]
         mask[self.__pumbra] = color_keys["penumbra"]
         mask[self.__nl] = color_keys["neutral line"]
-        axs_seg.imshow(mask)
+        mask[self.__background] = np.nan
+        axs_seg.imshow(mask, cmap = cmap)
         nx.draw(self.__G, pos, axs_seg, node_size = 100, cmap = cmap, node_color = values, with_labels = False, font_color = "white")
 
 
@@ -164,6 +165,7 @@ class ActiveRegion(ActiveRegionParameters):
         color_keys = {"penumbra" : 1.0, "umbra" : 0.5714285714285714, "neutral line" : 0.0}
         values = [color_keys.get(x[1]["type"], 0.25) for x in self.__G.nodes.data()]
         pos = nx.get_node_attributes(self.__G, "pos")
+        pos = {i : (pos[i][0], -pos[i][1]) for i in pos} # Flip them because of imshow
 
         nx.draw(self.__G, pos, axs, node_size = 100, cmap = cmap, node_color = values, with_labels = False, font_color = "white")
 
@@ -294,7 +296,7 @@ class ActiveRegion(ActiveRegionParameters):
 
             self.__background = background
 
-    def assert_neutral_lines(self, radius = 3, thresh = 150):
+    def assert_neutral_lines(self, radius = 5, thresh = 150):
         """Generates neutral lines using morphological operations and a flux threshold
         finds neutral lines using the method described by Schrijver in
         
@@ -496,7 +498,7 @@ class ActiveRegion(ActiveRegionParameters):
                 bordered.append(i)
         return np.delete(labels, bordered), np.delete(sizes, bordered)
 
-    def __remove_percentage_max(self, labeled, labels, sizes, p = 0.1):
+    def __remove_percentage_max(self, labeled, labels, sizes, p = 0.01):
         """Removes pixels that border the edge
 
         Args:
