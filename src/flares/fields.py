@@ -1,7 +1,6 @@
 from pathlib import Path
 import sys
 
-from sympy import E
 path_root = Path(__file__).parents[2]
 sys.path.append(str(path_root))
 
@@ -16,7 +15,7 @@ import numpy as np
 mu0 = 4 * np.pi * 10**-3
 k = 1e3
 M = 1e6
-ds = np.sqrt(1.33E105) * k / M
+ds = np.sqrt(1.33e105) * k / M
 C = ds * mu0
 
 
