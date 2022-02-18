@@ -1,6 +1,7 @@
 from flares.active_region import ActiveRegion
 from flares.data import get_dates
 import numpy as np
+import pandas as pd
 
 
 class ARDataSet:
@@ -16,10 +17,16 @@ class ARDataSet:
         if dates is None:
             dates = get_dates(hnum, root, sort = True)
 
-        self.segmented, self.segmented_labels = [], []
-        self.sharps, self.sharps_labels = [], []
-        self.baseline, self.baseline_labels = [], []
-        self.graphs, self.graphs_labels = [], []
+        self.segmented = pd.DataFrame()
+        self.sharps = pd.DataFrame()
+        self.baseline = pd.DataFrame()
+        self.graphs = []
+
+        self.times = []
+        self.t = []
+
+        prev_time = None
+        time = None
 
         for date in dates:
             if verbose:
@@ -31,27 +38,10 @@ class ARDataSet:
                     print(f"skipping: {date}")
                 continue
 
-            data = ar.get_segmented()
-            self.segmented.append(list(data.values()))
-            if len(self.segmented_labels) == 0:
-                self.segmented_labels = list(data.keys())
-
-            data = ar.get_baseline()
-            self.baseline.append(list(data.values()))
-            if len(self.baseline_labels) == 0:
-                self.baseline_labels = list(data.keys())
-
-            data = ar.get_sharps()
-            self.sharps.append(list(data.values()))
-            if len(self.sharps_labels) == 0:
-                self.sharps_labels = list(data.keys())
+            self.segmented = self.segmented.append(ar.get_segmented(), ignore_index = True)
+            self.baseline = self.segmented.append(ar.get_segmented(), ignore_index = True)
+            self.sharps = self.segmented.append(ar.get_segmented(), ignore_index = True)
 
             data = ar.get_graph()
-            self.graphs.append(data[0])
-            if len(self.graphs_labels) == 0:
-                self.graphs_labels = list(data[1])
-
-
-        self.segmented = np.array(self.segmented)
-        self.baseline = np.array(self.segmented)
-        self.sharps = np.array(self.segmented)
+            if not hasattr(self, "graphs_labels"):
+                self.graph_labels = data[1]
