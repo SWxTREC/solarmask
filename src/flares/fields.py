@@ -1,5 +1,7 @@
 from pathlib import Path
 import sys
+
+from sympy import E
 path_root = Path(__file__).parents[2]
 sys.path.append(str(path_root))
 
@@ -10,6 +12,12 @@ import torch
 import torch.nn.functional as F
 import numpy as np
 
+
+mu0 = 4 * np.pi * 10**-3
+k = 1e3
+M = 1e6
+ds = np.sqrt(1.33E105) * k / M
+C = ds * mu0
 
 
 class ActiveRegionFields:
@@ -49,7 +57,7 @@ class ActiveRegionFields:
     def assert_Bh(self):
         """Horizontal Magnetic Field Component
 
-        $$B_h = |B_x| + |B_y|$$
+        $$B_h = norm(B_x, B_y)$$
         """
         if not hasattr(self, 'Bh'):
             self.Bh = self.norm((self.Bx, self.By))
@@ -64,14 +72,14 @@ class ActiveRegionFields:
     def assert_B(self):
         """Magnitude of magnetic flux vector
 
-        $$B = |B_x| + |B_y| + |B_z|$$
+        $$B = norm(B_x, B_y, B_z)$$
         """
         if not hasattr(self, 'B'):
             self.B = self.norm((self.Bx, self.By, self.Bz))
     def assert_grad_B(self):
         """Gradient of magnetic field magnitude
 
-        $$B = |B_x| + |B_y| + |B_z|$$
+        $$B = norm(B_x, B_y, B_z)$$
         """
         if not hasattr(self, 'grad_B_x') or not hasattr(self, 'grad_B_y'):
             self.assert_B()
@@ -79,7 +87,7 @@ class ActiveRegionFields:
     def assert_grad_Bh(self):
         """Gradient of horizontal magnetic field
 
-        $$B_h = |B_x| + |B_y|$$
+        $$B_h = norm(B_x, B_y)$$
         """
         if not hasattr(self, 'grad_Bh_x') or not hasattr(self, 'grad_Bh_y'):
             self.assert_Bh()
@@ -104,7 +112,7 @@ class ActiveRegionFields:
     def assert_grad_Bm(self):
         """Magnitude of gradient vectors of x, y, z magnetic fields
 
-        $$\\nabla B = |\\nabla B_z| + |\\nabla B_y| + |\\nabla B_z|$$
+        $$\\nabla B = norm(\\nabla B_z, \\nabla B_y, \\nabla B_z)$$
         """
         if not hasattr(self, 'grad_Bm'):
             self.assert_grad_B()
@@ -117,7 +125,7 @@ class ActiveRegionFields:
         if not hasattr(self, 'J'):
             self.assert_grad_Bx()
             self.assert_grad_By()
-            self.J = self.grad_By_x - self.grad_Bx_y
+            self.J = (self.grad_By_x - self.grad_Bx_y) / mu0
     def assert_Jh(self):
         """Vertical heterogeneity current density
 
@@ -127,7 +135,7 @@ class ActiveRegionFields:
             self.assert_grad_Bx()
             self.assert_grad_By()
             self.assert_B()
-            self.Jh = (self.By * self.grad_Bx_y - self.Bx * self.grad_By_x) / self.B
+            self.Jh = (self.By * self.grad_Bx_y - self.Bx * self.grad_By_x) / mu0
     def assert_hc(self):
         """Current helicity
 
@@ -150,11 +158,11 @@ class ActiveRegionFields:
     def assert_rho(self):
         """Excess magnetic energy density
 
-        $$\\rho_e = |B_p - B_o|$$
+        $$\\rho_e = norm(B_p - B_o)$$
         """
         if not hasattr(self, 'rho'):
             self.assert_Bp()
-            self.rho = (self.B - self.norm((self.Bpx, self.Bpy, self.Bpz)))**2
+            self.rho = (self.B - self.norm((self.Bpx, self.Bpy, self.Bpz)))**2 / (8*np.pi)
 
     def assert_Bp(self):
         """Magnetic field vector assuming zero current
@@ -222,7 +230,7 @@ class ActiveRegionFields:
 
 class ActiveRegionParameters(ActiveRegionFields):
 
-    def __init__(self, Bz, By, Bx, num_features):
+    def __init__(self, Bz, By, Bx, num_features, chosen_funcs = None):
         """A place to define physical parameters of an active region
 
         Args:
@@ -232,13 +240,25 @@ class ActiveRegionParameters(ActiveRegionFields):
         """
         super().__init__(Bz, Bx, By)
 
-        self.chosen_funcs = [   self.z_moments,self.phitot,self.phitotabs,self.h_moments, \
-                                self.gamma_moments,self.B_grad_moments,self.Bz_grad_moments, \
-                                self.Bh_grad_moments,self.J_moments,self.itot,self.itotabs, \
-                                self.itot_polarity,self.Jh_moments,self.ihtot,self.ihtotabs, \
-                                self.twist_moments,self.hc_moments,self.hctot,self.hctotabs, \
-                                self.shear_moments,self.rho_moments,self.totrho]
-        self.num_features = 56 + num_features
+        if chosen_funcs is None:
+            self.chosen_funcs = [   self.Bz_moments,self.Bz_tot,self.Bz_totabs,self.Bh_moments, \
+                                    self.gamma_moments,self.GradB_moments,self.GradBz_moments, \
+                                    self.GradBh_moments,self.J_moments,self.itot,self.itotabs, \
+                                    self.itot_polarity,self.Jh_moments,self.ihtot,self.ihtotabs, \
+                                    self.twist_moments,self.hc_moments,self.hctot,self.hctotabs, \
+                                    self.shear_moments,self.rho_moments,self.totrho, \
+                                    self.entropy]
+        else:
+            self.chosen_funcs = chosen_funcs
+
+        self.num_features = 0
+        for i in self.chosen_funcs:
+            if "moments" in i.__name__:
+                self.num_features += 4
+            else:
+                self.num_features += 1
+
+        self.num_features += num_features
         self.labels = []
 
     def register_func(self, func):
@@ -261,42 +281,48 @@ class ActiveRegionParameters(ActiveRegionFields):
         Returns:
             np.array: a 1 dimensional array with all of the physical features computed on the subset provided by mask
         """
+
         self.__switch_to_gpu()
         mask = torch.from_numpy(mask).to(dev)
 
-        features = []
-        labels = []
+        data = dict()
+
+        skip = np.count_nonzero(mask) == 0 # Empty
+
         # 1 dimensional features
         for func in self.chosen_funcs:
-            label, value = func(mask)
+            name = func.__name__
 
-            try:
-                iter(label)
-                iter(value)
-                for i in range(len(label)):
-                    labels.append(labels_prefix + label[i])
-                    features.append(value[i])
-            except TypeError:
-                labels.append(labels_prefix + label)
-                features.append(float(value))
+
+            if "moment" in name: # Statistical moment
+                labels = stat_moment_label(name.split("_")[0])
+                if skip:
+                    values = [0.0 for _ in labels]
+                else:
+                    values = func(mask)
+
+                for label, value in zip(labels, values):
+                    v = float(value)
+                    if np.isnan(v):
+                        print(f"WARNING: {labels_prefix + label} caused nan")
+                    data[labels_prefix + label] = v
+                    
+
+            else: # Single value
+                label = name
+                if skip:
+                    value = 0.0
+                else:
+                    value = float(func(mask))
+                    v = float(value)
+                    if np.isnan(v):
+                        print(f"WARNING: {labels_prefix + label} caused nan")
+                data[labels_prefix + label] = value
 
         mask = mask.detach().cpu().numpy()
         self.__come_back_from_gpu()
 
-        return np.array(features), labels
-
-
-    def fractal_dim(self, mask):
-        """Fractal Dimension
-
-        Args:
-            mask (array): The mask to compute on
-
-        Returns:
-            float: Fractal dimension of mask
-        """
-        mask = mask.detach().cpu().numpy() # For sklearn
-        return "frac_dim", fractal_dimension(mask)
+        return data
 
     def entropy(self, mask):
         """Shannon Entropy
@@ -308,10 +334,10 @@ class ActiveRegionParameters(ActiveRegionFields):
             float: Shannon Entropy of mask
         """
         mask = mask.detach().cpu().numpy() # For sklearn
-        return "entropy", shannon_entropy(mask)
+        return shannon_entropy(mask)
 
 
-    def z_moments(self, mask):
+    def Bz_moments(self, mask):
         """Statistical moments of the line-of-site magnetic flux (treated as a distribution without regard to x,y coordinates)
 
         Parameterization scalars come from
@@ -325,9 +351,9 @@ class ActiveRegionParameters(ActiveRegionFields):
         Returns:
             parameter label, $M(B_z)$
         """
-        return stat_moment_label("Bz"), stat_moment(self.Bz[mask])
+        return stat_moment(self.Bz[mask])
 
-    def phitot(self, mask):
+    def Bz_tot(self, mask):
         """Sum of the unsigned line of sight flux
 
         Parameterization scalars come from
@@ -341,9 +367,9 @@ class ActiveRegionParameters(ActiveRegionFields):
         Returns:
             parameter label, $\\sum_{\\Phi\\in B_z}|\\Phi|dA$
         """
-        return "Bz_tot", torch.sum(torch.abs(self.Bz[mask]))
+        return torch.sum(torch.abs(self.Bz[mask]))
 
-    def phitotabs(self, mask):
+    def Bz_totabs(self, mask):
         """Unsigned sum of line of sight flux
 
         Parameterization scalars come from
@@ -357,10 +383,10 @@ class ActiveRegionParameters(ActiveRegionFields):
         Returns:
             parameter label, $|\\sum_{\\Phi\\in B_z}\\Phi dA|$
         """
-        return "Bz_totabs", torch.abs(torch.sum(self.Bz[mask]))
+        return torch.abs(torch.sum(self.Bz[mask]))
 
-    def h_moments(self, mask):
-        """Statistical moments of current helicity
+    def Bh_moments(self, mask):
+        """Statistical moments of horizontal magnetic field 
 
         Parameterization scalars come from
 
@@ -377,7 +403,8 @@ class ActiveRegionParameters(ActiveRegionFields):
             parameter label, $M(B_h)$
         """
         self.assert_Bh()
-        return stat_moment_label("hc"), stat_moment(self.Bh[mask])
+        return stat_moment(self.Bh[mask])
+
     def gamma_moments(self, mask):
         """Statistical momemnts of angle of magnetic field vector
 
@@ -396,9 +423,9 @@ class ActiveRegionParameters(ActiveRegionFields):
             parameter label, $M(\\gamma)$
         """
         self.assert_gamma()
-        return stat_moment_label("gamma"), stat_moment(self.gamma[mask])
+        return stat_moment(self.gamma[mask])
 
-    def B_grad_moments(self, mask):
+    def GradB_moments(self, mask):
         """Statistical moments of the gradient of the magnetic field vector
 
         Parameterization scalars come from
@@ -410,14 +437,15 @@ class ActiveRegionParameters(ActiveRegionFields):
             mask (np.array): A subset of self to compute upon
 
         Asserts:
-            B = |B_x| + |B_y| + |B_z|
+            B = norm(B_x, B_y, B_z)
 
         Returns:
             parameter label, $M(\\nabla B)$
         """
         self.assert_grad_B()
-        return stat_moment_label("B_grad"), stat_moment(self.norm((self.grad_B_x[mask], self.grad_B_y[mask])))
-    def Bz_grad_moments(self, mask):
+        return stat_moment(self.norm((self.grad_B_x[mask], self.grad_B_y[mask])))
+
+    def GradBz_moments(self, mask):
         """Statistical moments of the gradient of the z component of the magnetic flux
 
         Parameterization scalars come from
@@ -432,8 +460,9 @@ class ActiveRegionParameters(ActiveRegionFields):
             parameter label, $M(\\nabla B_z)$
         """
         self.assert_grad_Bz()
-        return stat_moment_label("Bz_grad"), stat_moment(self.norm((self.grad_Bz_x[mask], self.grad_Bz_y[mask])))
-    def Bh_grad_moments(self, mask):
+        return stat_moment(self.norm((self.grad_Bz_x[mask], self.grad_Bz_y[mask])))
+
+    def GradBh_moments(self, mask):
         """Statistical moments of the gradient of the horizontal component of the magnetic flux
 
         Parameterization scalars come from
@@ -445,13 +474,14 @@ class ActiveRegionParameters(ActiveRegionFields):
             mask (np.array): A subset of self to compute upon
 
         Asserts:
-            $$B_h = |B_x| + |B_y|$$
+            $$B_h = norm(B_x, B_y)$$
 
         Returns:
             parameter label, $M(\\nabla B_h)$
         """
         self.assert_grad_Bh()
-        return stat_moment_label("Bh_grad"), stat_moment(self.norm((self.grad_Bh_x[mask], self.grad_Bh_y[mask])))
+        return stat_moment(self.norm((self.grad_Bh_x[mask], self.grad_Bh_y[mask])))
+        
     def J_moments(self, mask):
         """Statistical moments of the gradient of the vertical current
 
@@ -470,7 +500,8 @@ class ActiveRegionParameters(ActiveRegionFields):
             parameter label, $M(J_z)$
         """
         self.assert_J()
-        return stat_moment_label("J"), stat_moment(self.J[mask])
+        return stat_moment(self.J[mask])
+
     def itot(self, mask):
         """Sum of unsigned vertical current
 
@@ -489,7 +520,8 @@ class ActiveRegionParameters(ActiveRegionFields):
             parameter label, $\\sum_{j \\in J_z}|j|dA$
         """
         self.assert_J()
-        return "itot", torch.sum(torch.abs(self.J[mask]))
+        return torch.sum(torch.abs(self.J[mask]))
+
     def itotabs(self, mask):
         """unsigned sum of vertical current
 
@@ -508,7 +540,8 @@ class ActiveRegionParameters(ActiveRegionFields):
             parameter label, $|\\sum_{j \\in J_z}jdA|$
         """
         self.assert_J()
-        return "itot_abs", torch.abs(torch.sum(self.J[mask]))
+        return torch.abs(torch.sum(self.J[mask]))
+
     def itot_polarity(self, mask):
         """sum of unsigned current regardless of sign of Bz
 
@@ -527,7 +560,8 @@ class ActiveRegionParameters(ActiveRegionFields):
             parameter label, $|\\sum_{j^+ \\in J_z(B_z > 0)}j^+dA| + |\\sum_{j^- \\in J_z(B_z < 0)}j^-dA|$
         """
         self.assert_J()
-        return "itot_pol", torch.abs(torch.sum(self.J[(self.Bz > 0) & mask])) + torch.abs(torch.sum(self.J[(self.Bz < 0) & mask]))
+        return torch.abs(torch.sum(self.J[(self.Bz > 0) & mask])) + torch.abs(torch.sum(self.J[(self.Bz < 0) & mask]))
+
     def Jh_moments(self, mask):
         """Statistical moments of Vertical heterogeneity current 
 
@@ -547,7 +581,8 @@ class ActiveRegionParameters(ActiveRegionFields):
             parameter label, $M(J_z^h)$
         """
         self.assert_Jh()
-        return "Jh", stat_moment(self.Jh[mask])
+        return stat_moment(self.Jh[mask])
+
     def ihtot(self, mask):
         """Sum of unsigned vertical heterogeneity current
 
@@ -567,7 +602,8 @@ class ActiveRegionParameters(ActiveRegionFields):
             parameter label, $\\sum_{i\\in J_z^h}|i dA|$
         """
         self.assert_Jh()
-        return "ihtot", torch.sum(torch.abs(self.Jh[mask]))
+        return torch.sum(torch.abs(self.Jh[mask]))
+
     def ihtotabs(self, mask):
         """Unsigned Sum of vertical heterogeneity current
 
@@ -587,7 +623,8 @@ class ActiveRegionParameters(ActiveRegionFields):
             parameter label, $|\\sum_{i\\in J_z^h}i dA|$
         """
         self.assert_Jh()
-        return "ihtot_abs", torch.abs(torch.sum(self.Jh[mask]))
+        return torch.abs(torch.sum(self.Jh[mask]))
+
     def twist_moments(self, mask):
         """Statistical moments of twist
 
@@ -607,7 +644,11 @@ class ActiveRegionParameters(ActiveRegionFields):
             parameter label, $M(T)$
         """
         self.assert_J()
-        return stat_moment_label("twist"), stat_moment(self.J[mask] / self.Bz[mask])
+        # Assume J(B = 0) = 0 - so twist is "1"
+        JJ = C * torch.nan_to_num(self.J[mask] / self.Bz[mask], nan = 1.0)
+        JJ[torch.abs(JJ) == float('inf')] = 1.0
+        return stat_moment(JJ)
+
     def hc_moments(self, mask):
         """Statistical moments of current helicity
 
@@ -626,7 +667,8 @@ class ActiveRegionParameters(ActiveRegionFields):
             parameter label, $M(h_c)$
         """
         self.assert_hc()
-        return stat_moment_label("hc"), stat_moment(self.hc[mask])
+        return stat_moment(self.hc[mask])
+
     def hctot(self, mask):
         """Sum of unsigned current helicity
 
@@ -645,7 +687,8 @@ class ActiveRegionParameters(ActiveRegionFields):
             parameter label, $\\sum_{h \\in h_c}|h|dA$
         """
         self.assert_hc()
-        return "hc_tot", torch.sum(torch.abs(self.hc[mask]))
+        return torch.sum(torch.abs(self.hc[mask]))
+
     def hctotabs(self, mask):
         """Unsigned sum of current helicity
 
@@ -664,7 +707,8 @@ class ActiveRegionParameters(ActiveRegionFields):
             parameter label, $|\\sum_{h \\in h_c}hdA|$
         """
         self.assert_hc()
-        return "hc_tot_abs", torch.abs(torch.sum(self.hc[mask]))
+        return torch.abs(torch.sum(self.hc[mask]))
+
     def shear_moments(self, mask):
         """Statistical moments of shear angle
 
@@ -683,7 +727,7 @@ class ActiveRegionParameters(ActiveRegionFields):
             parameter label, $M(\\Psi)$
         """
         self.assert_shear() # Pretty big function call right here
-        return stat_moment_label("shear"), stat_moment(self.shear[mask])
+        return stat_moment(self.shear[mask])
 
     def rho_moments(self, mask):
         """Statistical moments of magnetic energy density
@@ -703,7 +747,7 @@ class ActiveRegionParameters(ActiveRegionFields):
             parameter label, $M(\\rho_e)$
         """
         self.assert_rho()
-        return stat_moment_label("rho"), stat_moment(self.rho[mask])
+        return stat_moment(self.rho[mask])
 
     def totrho(self, mask):
         """Total photospheric excess magnetic energy
@@ -723,7 +767,7 @@ class ActiveRegionParameters(ActiveRegionFields):
             parameter label, $$\\sum_{p\\in p_e)pdA$$
         """
         self.assert_rho()
-        return "totrho", torch.sum(self.rho[mask])
+        return torch.sum(self.rho[mask])
 
 
     def __switch_to_gpu(self):
@@ -751,7 +795,4 @@ class ActiveRegionParameters(ActiveRegionFields):
         Returns:
             The result of summing the application of torch.abs() on all elements of data
         """
-        n = 0
-        for i in data:
-            n += torch.abs(i)
-        return n
+        return norm(data)

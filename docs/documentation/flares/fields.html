@@ -29,6 +29,8 @@
 </summary>
 <pre><code class="python">from pathlib import Path
 import sys
+
+from sympy import E
 path_root = Path(__file__).parents[2]
 sys.path.append(str(path_root))
 
@@ -39,6 +41,12 @@ import torch
 import torch.nn.functional as F
 import numpy as np
 
+
+mu0 = 4 * np.pi * 10**-3
+k = 1e3
+M = 1e6
+ds = np.sqrt(1.33E105) * k / M
+C = ds * mu0
 
 
 class ActiveRegionFields:
@@ -78,7 +86,7 @@ class ActiveRegionFields:
     def assert_Bh(self):
         &#34;&#34;&#34;Horizontal Magnetic Field Component
 
-        $$B_h = |B_x| + |B_y|$$
+        $$B_h = norm(B_x, B_y)$$
         &#34;&#34;&#34;
         if not hasattr(self, &#39;Bh&#39;):
             self.Bh = self.norm((self.Bx, self.By))
@@ -93,14 +101,14 @@ class ActiveRegionFields:
     def assert_B(self):
         &#34;&#34;&#34;Magnitude of magnetic flux vector
 
-        $$B = |B_x| + |B_y| + |B_z|$$
+        $$B = norm(B_x, B_y, B_z)$$
         &#34;&#34;&#34;
         if not hasattr(self, &#39;B&#39;):
             self.B = self.norm((self.Bx, self.By, self.Bz))
     def assert_grad_B(self):
         &#34;&#34;&#34;Gradient of magnetic field magnitude
 
-        $$B = |B_x| + |B_y| + |B_z|$$
+        $$B = norm(B_x, B_y, B_z)$$
         &#34;&#34;&#34;
         if not hasattr(self, &#39;grad_B_x&#39;) or not hasattr(self, &#39;grad_B_y&#39;):
             self.assert_B()
@@ -108,7 +116,7 @@ class ActiveRegionFields:
     def assert_grad_Bh(self):
         &#34;&#34;&#34;Gradient of horizontal magnetic field
 
-        $$B_h = |B_x| + |B_y|$$
+        $$B_h = norm(B_x, B_y)$$
         &#34;&#34;&#34;
         if not hasattr(self, &#39;grad_Bh_x&#39;) or not hasattr(self, &#39;grad_Bh_y&#39;):
             self.assert_Bh()
@@ -133,7 +141,7 @@ class ActiveRegionFields:
     def assert_grad_Bm(self):
         &#34;&#34;&#34;Magnitude of gradient vectors of x, y, z magnetic fields
 
-        $$\\nabla B = |\\nabla B_z| + |\\nabla B_y| + |\\nabla B_z|$$
+        $$\\nabla B = norm(\\nabla B_z, \\nabla B_y, \\nabla B_z)$$
         &#34;&#34;&#34;
         if not hasattr(self, &#39;grad_Bm&#39;):
             self.assert_grad_B()
@@ -146,7 +154,7 @@ class ActiveRegionFields:
         if not hasattr(self, &#39;J&#39;):
             self.assert_grad_Bx()
             self.assert_grad_By()
-            self.J = self.grad_By_x - self.grad_Bx_y
+            self.J = (self.grad_By_x - self.grad_Bx_y) / mu0
     def assert_Jh(self):
         &#34;&#34;&#34;Vertical heterogeneity current density
 
@@ -156,7 +164,7 @@ class ActiveRegionFields:
             self.assert_grad_Bx()
             self.assert_grad_By()
             self.assert_B()
-            self.Jh = (self.By * self.grad_Bx_y - self.Bx * self.grad_By_x) / self.B
+            self.Jh = (self.By * self.grad_Bx_y - self.Bx * self.grad_By_x) / mu0
     def assert_hc(self):
         &#34;&#34;&#34;Current helicity
 
@@ -179,11 +187,11 @@ class ActiveRegionFields:
     def assert_rho(self):
         &#34;&#34;&#34;Excess magnetic energy density
 
-        $$\\rho_e = |B_p - B_o|$$
+        $$\\rho_e = norm(B_p - B_o)$$
         &#34;&#34;&#34;
         if not hasattr(self, &#39;rho&#39;):
             self.assert_Bp()
-            self.rho = (self.B - self.norm((self.Bpx, self.Bpy, self.Bpz)))**2
+            self.rho = (self.B - self.norm((self.Bpx, self.Bpy, self.Bpz)))**2 / (8*np.pi)
 
     def assert_Bp(self):
         &#34;&#34;&#34;Magnetic field vector assuming zero current
@@ -251,7 +259,7 @@ class ActiveRegionFields:
 
 class ActiveRegionParameters(ActiveRegionFields):
 
-    def __init__(self, Bz, By, Bx, num_features):
+    def __init__(self, Bz, By, Bx, num_features, chosen_funcs = None):
         &#34;&#34;&#34;A place to define physical parameters of an active region
 
         Args:
@@ -261,13 +269,25 @@ class ActiveRegionParameters(ActiveRegionFields):
         &#34;&#34;&#34;
         super().__init__(Bz, Bx, By)
 
-        self.chosen_funcs = [   self.z_moments,self.phitot,self.phitotabs,self.h_moments, \
-                                self.gamma_moments,self.B_grad_moments,self.Bz_grad_moments, \
-                                self.Bh_grad_moments,self.J_moments,self.itot,self.itotabs, \
-                                self.itot_polarity,self.Jh_moments,self.ihtot,self.ihtotabs, \
-                                self.twist_moments,self.hc_moments,self.hctot,self.hctotabs, \
-                                self.shear_moments,self.rho_moments,self.totrho]
-        self.num_features = 56 + num_features
+        if chosen_funcs is None:
+            self.chosen_funcs = [   self.Bz_moments,self.Bz_tot,self.Bz_totabs,self.Bh_moments, \
+                                    self.gamma_moments,self.GradB_moments,self.GradBz_moments, \
+                                    self.GradBh_moments,self.J_moments,self.itot,self.itotabs, \
+                                    self.itot_polarity,self.Jh_moments,self.ihtot,self.ihtotabs, \
+                                    self.twist_moments,self.hc_moments,self.hctot,self.hctotabs, \
+                                    self.shear_moments,self.rho_moments,self.totrho, \
+                                    self.entropy]
+        else:
+            self.chosen_funcs = chosen_funcs
+
+        self.num_features = 0
+        for i in self.chosen_funcs:
+            if &#34;moments&#34; in i.__name__:
+                self.num_features += 4
+            else:
+                self.num_features += 1
+
+        self.num_features += num_features
         self.labels = []
 
     def register_func(self, func):
@@ -290,42 +310,48 @@ class ActiveRegionParameters(ActiveRegionFields):
         Returns:
             np.array: a 1 dimensional array with all of the physical features computed on the subset provided by mask
         &#34;&#34;&#34;
+
         self.__switch_to_gpu()
         mask = torch.from_numpy(mask).to(dev)
 
-        features = []
-        labels = []
+        data = dict()
+
+        skip = np.count_nonzero(mask) == 0 # Empty
+
         # 1 dimensional features
         for func in self.chosen_funcs:
-            label, value = func(mask)
+            name = func.__name__
 
-            try:
-                iter(label)
-                iter(value)
-                for i in range(len(label)):
-                    labels.append(labels_prefix + label[i])
-                    features.append(value[i])
-            except TypeError:
-                labels.append(labels_prefix + label)
-                features.append(float(value))
+
+            if &#34;moment&#34; in name: # Statistical moment
+                labels = stat_moment_label(name.split(&#34;_&#34;)[0])
+                if skip:
+                    values = [0.0 for _ in labels]
+                else:
+                    values = func(mask)
+
+                for label, value in zip(labels, values):
+                    v = float(value)
+                    if np.isnan(v):
+                        print(f&#34;WARNING: {labels_prefix + label} caused nan&#34;)
+                    data[labels_prefix + label] = v
+                    
+
+            else: # Single value
+                label = name
+                if skip:
+                    value = 0.0
+                else:
+                    value = float(func(mask))
+                    v = float(value)
+                    if np.isnan(v):
+                        print(f&#34;WARNING: {labels_prefix + label} caused nan&#34;)
+                data[labels_prefix + label] = value
 
         mask = mask.detach().cpu().numpy()
         self.__come_back_from_gpu()
 
-        return np.array(features), labels
-
-
-    def fractal_dim(self, mask):
-        &#34;&#34;&#34;Fractal Dimension
-
-        Args:
-            mask (array): The mask to compute on
-
-        Returns:
-            float: Fractal dimension of mask
-        &#34;&#34;&#34;
-        mask = mask.detach().cpu().numpy() # For sklearn
-        return &#34;frac_dim&#34;, fractal_dimension(mask)
+        return data
 
     def entropy(self, mask):
         &#34;&#34;&#34;Shannon Entropy
@@ -337,10 +363,10 @@ class ActiveRegionParameters(ActiveRegionFields):
             float: Shannon Entropy of mask
         &#34;&#34;&#34;
         mask = mask.detach().cpu().numpy() # For sklearn
-        return &#34;entropy&#34;, shannon_entropy(mask)
+        return shannon_entropy(mask)
 
 
-    def z_moments(self, mask):
+    def Bz_moments(self, mask):
         &#34;&#34;&#34;Statistical moments of the line-of-site magnetic flux (treated as a distribution without regard to x,y coordinates)
 
         Parameterization scalars come from
@@ -354,9 +380,9 @@ class ActiveRegionParameters(ActiveRegionFields):
         Returns:
             parameter label, $M(B_z)$
         &#34;&#34;&#34;
-        return stat_moment_label(&#34;Bz&#34;), stat_moment(self.Bz[mask])
+        return stat_moment(self.Bz[mask])
 
-    def phitot(self, mask):
+    def Bz_tot(self, mask):
         &#34;&#34;&#34;Sum of the unsigned line of sight flux
 
         Parameterization scalars come from
@@ -370,9 +396,9 @@ class ActiveRegionParameters(ActiveRegionFields):
         Returns:
             parameter label, $\\sum_{\\Phi\\in B_z}|\\Phi|dA$
         &#34;&#34;&#34;
-        return &#34;Bz_tot&#34;, torch.sum(torch.abs(self.Bz[mask]))
+        return torch.sum(torch.abs(self.Bz[mask]))
 
-    def phitotabs(self, mask):
+    def Bz_totabs(self, mask):
         &#34;&#34;&#34;Unsigned sum of line of sight flux
 
         Parameterization scalars come from
@@ -386,10 +412,10 @@ class ActiveRegionParameters(ActiveRegionFields):
         Returns:
             parameter label, $|\\sum_{\\Phi\\in B_z}\\Phi dA|$
         &#34;&#34;&#34;
-        return &#34;Bz_totabs&#34;, torch.abs(torch.sum(self.Bz[mask]))
+        return torch.abs(torch.sum(self.Bz[mask]))
 
-    def h_moments(self, mask):
-        &#34;&#34;&#34;Statistical moments of current helicity
+    def Bh_moments(self, mask):
+        &#34;&#34;&#34;Statistical moments of horizontal magnetic field 
 
         Parameterization scalars come from
 
@@ -406,7 +432,8 @@ class ActiveRegionParameters(ActiveRegionFields):
             parameter label, $M(B_h)$
         &#34;&#34;&#34;
         self.assert_Bh()
-        return stat_moment_label(&#34;hc&#34;), stat_moment(self.Bh[mask])
+        return stat_moment(self.Bh[mask])
+
     def gamma_moments(self, mask):
         &#34;&#34;&#34;Statistical momemnts of angle of magnetic field vector
 
@@ -425,9 +452,9 @@ class ActiveRegionParameters(ActiveRegionFields):
             parameter label, $M(\\gamma)$
         &#34;&#34;&#34;
         self.assert_gamma()
-        return stat_moment_label(&#34;gamma&#34;), stat_moment(self.gamma[mask])
+        return stat_moment(self.gamma[mask])
 
-    def B_grad_moments(self, mask):
+    def GradB_moments(self, mask):
         &#34;&#34;&#34;Statistical moments of the gradient of the magnetic field vector
 
         Parameterization scalars come from
@@ -439,14 +466,15 @@ class ActiveRegionParameters(ActiveRegionFields):
             mask (np.array): A subset of self to compute upon
 
         Asserts:
-            B = |B_x| + |B_y| + |B_z|
+            B = norm(B_x, B_y, B_z)
 
         Returns:
             parameter label, $M(\\nabla B)$
         &#34;&#34;&#34;
         self.assert_grad_B()
-        return stat_moment_label(&#34;B_grad&#34;), stat_moment(self.norm((self.grad_B_x[mask], self.grad_B_y[mask])))
-    def Bz_grad_moments(self, mask):
+        return stat_moment(self.norm((self.grad_B_x[mask], self.grad_B_y[mask])))
+
+    def GradBz_moments(self, mask):
         &#34;&#34;&#34;Statistical moments of the gradient of the z component of the magnetic flux
 
         Parameterization scalars come from
@@ -461,8 +489,9 @@ class ActiveRegionParameters(ActiveRegionFields):
             parameter label, $M(\\nabla B_z)$
         &#34;&#34;&#34;
         self.assert_grad_Bz()
-        return stat_moment_label(&#34;Bz_grad&#34;), stat_moment(self.norm((self.grad_Bz_x[mask], self.grad_Bz_y[mask])))
-    def Bh_grad_moments(self, mask):
+        return stat_moment(self.norm((self.grad_Bz_x[mask], self.grad_Bz_y[mask])))
+
+    def GradBh_moments(self, mask):
         &#34;&#34;&#34;Statistical moments of the gradient of the horizontal component of the magnetic flux
 
         Parameterization scalars come from
@@ -474,13 +503,14 @@ class ActiveRegionParameters(ActiveRegionFields):
             mask (np.array): A subset of self to compute upon
 
         Asserts:
-            $$B_h = |B_x| + |B_y|$$
+            $$B_h = norm(B_x, B_y)$$
 
         Returns:
             parameter label, $M(\\nabla B_h)$
         &#34;&#34;&#34;
         self.assert_grad_Bh()
-        return stat_moment_label(&#34;Bh_grad&#34;), stat_moment(self.norm((self.grad_Bh_x[mask], self.grad_Bh_y[mask])))
+        return stat_moment(self.norm((self.grad_Bh_x[mask], self.grad_Bh_y[mask])))
+        
     def J_moments(self, mask):
         &#34;&#34;&#34;Statistical moments of the gradient of the vertical current
 
@@ -499,7 +529,8 @@ class ActiveRegionParameters(ActiveRegionFields):
             parameter label, $M(J_z)$
         &#34;&#34;&#34;
         self.assert_J()
-        return stat_moment_label(&#34;J&#34;), stat_moment(self.J[mask])
+        return stat_moment(self.J[mask])
+
     def itot(self, mask):
         &#34;&#34;&#34;Sum of unsigned vertical current
 
@@ -518,7 +549,8 @@ class ActiveRegionParameters(ActiveRegionFields):
             parameter label, $\\sum_{j \\in J_z}|j|dA$
         &#34;&#34;&#34;
         self.assert_J()
-        return &#34;itot&#34;, torch.sum(torch.abs(self.J[mask]))
+        return torch.sum(torch.abs(self.J[mask]))
+
     def itotabs(self, mask):
         &#34;&#34;&#34;unsigned sum of vertical current
 
@@ -537,7 +569,8 @@ class ActiveRegionParameters(ActiveRegionFields):
             parameter label, $|\\sum_{j \\in J_z}jdA|$
         &#34;&#34;&#34;
         self.assert_J()
-        return &#34;itot_abs&#34;, torch.abs(torch.sum(self.J[mask]))
+        return torch.abs(torch.sum(self.J[mask]))
+
     def itot_polarity(self, mask):
         &#34;&#34;&#34;sum of unsigned current regardless of sign of Bz
 
@@ -556,7 +589,8 @@ class ActiveRegionParameters(ActiveRegionFields):
             parameter label, $|\\sum_{j^+ \\in J_z(B_z &gt; 0)}j^+dA| + |\\sum_{j^- \\in J_z(B_z &lt; 0)}j^-dA|$
         &#34;&#34;&#34;
         self.assert_J()
-        return &#34;itot_pol&#34;, torch.abs(torch.sum(self.J[(self.Bz &gt; 0) &amp; mask])) + torch.abs(torch.sum(self.J[(self.Bz &lt; 0) &amp; mask]))
+        return torch.abs(torch.sum(self.J[(self.Bz &gt; 0) &amp; mask])) + torch.abs(torch.sum(self.J[(self.Bz &lt; 0) &amp; mask]))
+
     def Jh_moments(self, mask):
         &#34;&#34;&#34;Statistical moments of Vertical heterogeneity current 
 
@@ -576,7 +610,8 @@ class ActiveRegionParameters(ActiveRegionFields):
             parameter label, $M(J_z^h)$
         &#34;&#34;&#34;
         self.assert_Jh()
-        return &#34;Jh&#34;, stat_moment(self.Jh[mask])
+        return stat_moment(self.Jh[mask])
+
     def ihtot(self, mask):
         &#34;&#34;&#34;Sum of unsigned vertical heterogeneity current
 
@@ -596,7 +631,8 @@ class ActiveRegionParameters(ActiveRegionFields):
             parameter label, $\\sum_{i\\in J_z^h}|i dA|$
         &#34;&#34;&#34;
         self.assert_Jh()
-        return &#34;ihtot&#34;, torch.sum(torch.abs(self.Jh[mask]))
+        return torch.sum(torch.abs(self.Jh[mask]))
+
     def ihtotabs(self, mask):
         &#34;&#34;&#34;Unsigned Sum of vertical heterogeneity current
 
@@ -616,7 +652,8 @@ class ActiveRegionParameters(ActiveRegionFields):
             parameter label, $|\\sum_{i\\in J_z^h}i dA|$
         &#34;&#34;&#34;
         self.assert_Jh()
-        return &#34;ihtot_abs&#34;, torch.abs(torch.sum(self.Jh[mask]))
+        return torch.abs(torch.sum(self.Jh[mask]))
+
     def twist_moments(self, mask):
         &#34;&#34;&#34;Statistical moments of twist
 
@@ -636,7 +673,11 @@ class ActiveRegionParameters(ActiveRegionFields):
             parameter label, $M(T)$
         &#34;&#34;&#34;
         self.assert_J()
-        return stat_moment_label(&#34;twist&#34;), stat_moment(self.J[mask] / self.Bz[mask])
+        # Assume J(B = 0) = 0 - so twist is &#34;1&#34;
+        JJ = C * torch.nan_to_num(self.J[mask] / self.Bz[mask], nan = 1.0)
+        JJ[torch.abs(JJ) == float(&#39;inf&#39;)] = 1.0
+        return stat_moment(JJ)
+
     def hc_moments(self, mask):
         &#34;&#34;&#34;Statistical moments of current helicity
 
@@ -655,7 +696,8 @@ class ActiveRegionParameters(ActiveRegionFields):
             parameter label, $M(h_c)$
         &#34;&#34;&#34;
         self.assert_hc()
-        return stat_moment_label(&#34;hc&#34;), stat_moment(self.hc[mask])
+        return stat_moment(self.hc[mask])
+
     def hctot(self, mask):
         &#34;&#34;&#34;Sum of unsigned current helicity
 
@@ -674,7 +716,8 @@ class ActiveRegionParameters(ActiveRegionFields):
             parameter label, $\\sum_{h \\in h_c}|h|dA$
         &#34;&#34;&#34;
         self.assert_hc()
-        return &#34;hc_tot&#34;, torch.sum(torch.abs(self.hc[mask]))
+        return torch.sum(torch.abs(self.hc[mask]))
+
     def hctotabs(self, mask):
         &#34;&#34;&#34;Unsigned sum of current helicity
 
@@ -693,7 +736,8 @@ class ActiveRegionParameters(ActiveRegionFields):
             parameter label, $|\\sum_{h \\in h_c}hdA|$
         &#34;&#34;&#34;
         self.assert_hc()
-        return &#34;hc_tot_abs&#34;, torch.abs(torch.sum(self.hc[mask]))
+        return torch.abs(torch.sum(self.hc[mask]))
+
     def shear_moments(self, mask):
         &#34;&#34;&#34;Statistical moments of shear angle
 
@@ -712,7 +756,7 @@ class ActiveRegionParameters(ActiveRegionFields):
             parameter label, $M(\\Psi)$
         &#34;&#34;&#34;
         self.assert_shear() # Pretty big function call right here
-        return stat_moment_label(&#34;shear&#34;), stat_moment(self.shear[mask])
+        return stat_moment(self.shear[mask])
 
     def rho_moments(self, mask):
         &#34;&#34;&#34;Statistical moments of magnetic energy density
@@ -732,7 +776,7 @@ class ActiveRegionParameters(ActiveRegionFields):
             parameter label, $M(\\rho_e)$
         &#34;&#34;&#34;
         self.assert_rho()
-        return stat_moment_label(&#34;rho&#34;), stat_moment(self.rho[mask])
+        return stat_moment(self.rho[mask])
 
     def totrho(self, mask):
         &#34;&#34;&#34;Total photospheric excess magnetic energy
@@ -752,7 +796,7 @@ class ActiveRegionParameters(ActiveRegionFields):
             parameter label, $$\\sum_{p\\in p_e)pdA$$
         &#34;&#34;&#34;
         self.assert_rho()
-        return &#34;totrho&#34;, torch.sum(self.rho[mask])
+        return torch.sum(self.rho[mask])
 
 
     def __switch_to_gpu(self):
@@ -780,10 +824,7 @@ class ActiveRegionParameters(ActiveRegionFields):
         Returns:
             The result of summing the application of torch.abs() on all elements of data
         &#34;&#34;&#34;
-        n = 0
-        for i in data:
-            n += torch.abs(i)
-        return n</code></pre>
+        return norm(data)</code></pre>
 </details>
 </section>
 <section>
@@ -854,7 +895,7 @@ is done</p>
     def assert_Bh(self):
         &#34;&#34;&#34;Horizontal Magnetic Field Component
 
-        $$B_h = |B_x| + |B_y|$$
+        $$B_h = norm(B_x, B_y)$$
         &#34;&#34;&#34;
         if not hasattr(self, &#39;Bh&#39;):
             self.Bh = self.norm((self.Bx, self.By))
@@ -869,14 +910,14 @@ is done</p>
     def assert_B(self):
         &#34;&#34;&#34;Magnitude of magnetic flux vector
 
-        $$B = |B_x| + |B_y| + |B_z|$$
+        $$B = norm(B_x, B_y, B_z)$$
         &#34;&#34;&#34;
         if not hasattr(self, &#39;B&#39;):
             self.B = self.norm((self.Bx, self.By, self.Bz))
     def assert_grad_B(self):
         &#34;&#34;&#34;Gradient of magnetic field magnitude
 
-        $$B = |B_x| + |B_y| + |B_z|$$
+        $$B = norm(B_x, B_y, B_z)$$
         &#34;&#34;&#34;
         if not hasattr(self, &#39;grad_B_x&#39;) or not hasattr(self, &#39;grad_B_y&#39;):
             self.assert_B()
@@ -884,7 +925,7 @@ is done</p>
     def assert_grad_Bh(self):
         &#34;&#34;&#34;Gradient of horizontal magnetic field
 
-        $$B_h = |B_x| + |B_y|$$
+        $$B_h = norm(B_x, B_y)$$
         &#34;&#34;&#34;
         if not hasattr(self, &#39;grad_Bh_x&#39;) or not hasattr(self, &#39;grad_Bh_y&#39;):
             self.assert_Bh()
@@ -909,7 +950,7 @@ is done</p>
     def assert_grad_Bm(self):
         &#34;&#34;&#34;Magnitude of gradient vectors of x, y, z magnetic fields
 
-        $$\\nabla B = |\\nabla B_z| + |\\nabla B_y| + |\\nabla B_z|$$
+        $$\\nabla B = norm(\\nabla B_z, \\nabla B_y, \\nabla B_z)$$
         &#34;&#34;&#34;
         if not hasattr(self, &#39;grad_Bm&#39;):
             self.assert_grad_B()
@@ -922,7 +963,7 @@ is done</p>
         if not hasattr(self, &#39;J&#39;):
             self.assert_grad_Bx()
             self.assert_grad_By()
-            self.J = self.grad_By_x - self.grad_Bx_y
+            self.J = (self.grad_By_x - self.grad_Bx_y) / mu0
     def assert_Jh(self):
         &#34;&#34;&#34;Vertical heterogeneity current density
 
@@ -932,7 +973,7 @@ is done</p>
             self.assert_grad_Bx()
             self.assert_grad_By()
             self.assert_B()
-            self.Jh = (self.By * self.grad_Bx_y - self.Bx * self.grad_By_x) / self.B
+            self.Jh = (self.By * self.grad_Bx_y - self.Bx * self.grad_By_x) / mu0
     def assert_hc(self):
         &#34;&#34;&#34;Current helicity
 
@@ -955,11 +996,11 @@ is done</p>
     def assert_rho(self):
         &#34;&#34;&#34;Excess magnetic energy density
 
-        $$\\rho_e = |B_p - B_o|$$
+        $$\\rho_e = norm(B_p - B_o)$$
         &#34;&#34;&#34;
         if not hasattr(self, &#39;rho&#39;):
             self.assert_Bp()
-            self.rho = (self.B - self.norm((self.Bpx, self.Bpy, self.Bpz)))**2
+            self.rho = (self.B - self.norm((self.Bpx, self.Bpy, self.Bpz)))**2 / (8*np.pi)
 
     def assert_Bp(self):
         &#34;&#34;&#34;Magnetic field vector assuming zero current
@@ -1035,7 +1076,7 @@ is done</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Magnitude of magnetic flux vector</p>
-<p><span><span class="MathJax_Preview">B = |B_x| + |B_y| + |B_z|</span><script type="math/tex; mode=display">B = |B_x| + |B_y| + |B_z|</script></span></p></div>
+<p><span><span class="MathJax_Preview">B = norm(B_x, B_y, B_z)</span><script type="math/tex; mode=display">B = norm(B_x, B_y, B_z)</script></span></p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -1043,7 +1084,7 @@ is done</p>
 <pre><code class="python">def assert_B(self):
     &#34;&#34;&#34;Magnitude of magnetic flux vector
 
-    $$B = |B_x| + |B_y| + |B_z|$$
+    $$B = norm(B_x, B_y, B_z)$$
     &#34;&#34;&#34;
     if not hasattr(self, &#39;B&#39;):
         self.B = self.norm((self.Bx, self.By, self.Bz))</code></pre>
@@ -1054,7 +1095,7 @@ is done</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Horizontal Magnetic Field Component</p>
-<p><span><span class="MathJax_Preview">B_h = |B_x| + |B_y|</span><script type="math/tex; mode=display">B_h = |B_x| + |B_y|</script></span></p></div>
+<p><span><span class="MathJax_Preview">B_h = norm(B_x, B_y)</span><script type="math/tex; mode=display">B_h = norm(B_x, B_y)</script></span></p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -1062,7 +1103,7 @@ is done</p>
 <pre><code class="python">def assert_Bh(self):
     &#34;&#34;&#34;Horizontal Magnetic Field Component
 
-    $$B_h = |B_x| + |B_y|$$
+    $$B_h = norm(B_x, B_y)$$
     &#34;&#34;&#34;
     if not hasattr(self, &#39;Bh&#39;):
         self.Bh = self.norm((self.Bx, self.By))</code></pre>
@@ -1181,7 +1222,7 @@ is done</p>
     if not hasattr(self, &#39;J&#39;):
         self.assert_grad_Bx()
         self.assert_grad_By()
-        self.J = self.grad_By_x - self.grad_Bx_y</code></pre>
+        self.J = (self.grad_By_x - self.grad_Bx_y) / mu0</code></pre>
 </details>
 </dd>
 <dt id="flares.fields.ActiveRegionFields.assert_Jh"><code class="name flex">
@@ -1203,7 +1244,7 @@ is done</p>
         self.assert_grad_Bx()
         self.assert_grad_By()
         self.assert_B()
-        self.Jh = (self.By * self.grad_Bx_y - self.Bx * self.grad_By_x) / self.B</code></pre>
+        self.Jh = (self.By * self.grad_Bx_y - self.Bx * self.grad_By_x) / mu0</code></pre>
 </details>
 </dd>
 <dt id="flares.fields.ActiveRegionFields.assert_gamma"><code class="name flex">
@@ -1231,7 +1272,7 @@ is done</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Gradient of magnetic field magnitude</p>
-<p><span><span class="MathJax_Preview">B = |B_x| + |B_y| + |B_z|</span><script type="math/tex; mode=display">B = |B_x| + |B_y| + |B_z|</script></span></p></div>
+<p><span><span class="MathJax_Preview">B = norm(B_x, B_y, B_z)</span><script type="math/tex; mode=display">B = norm(B_x, B_y, B_z)</script></span></p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -1239,7 +1280,7 @@ is done</p>
 <pre><code class="python">def assert_grad_B(self):
     &#34;&#34;&#34;Gradient of magnetic field magnitude
 
-    $$B = |B_x| + |B_y| + |B_z|$$
+    $$B = norm(B_x, B_y, B_z)$$
     &#34;&#34;&#34;
     if not hasattr(self, &#39;grad_B_x&#39;) or not hasattr(self, &#39;grad_B_y&#39;):
         self.assert_B()
@@ -1251,7 +1292,7 @@ is done</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Gradient of horizontal magnetic field</p>
-<p><span><span class="MathJax_Preview">B_h = |B_x| + |B_y|</span><script type="math/tex; mode=display">B_h = |B_x| + |B_y|</script></span></p></div>
+<p><span><span class="MathJax_Preview">B_h = norm(B_x, B_y)</span><script type="math/tex; mode=display">B_h = norm(B_x, B_y)</script></span></p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -1259,7 +1300,7 @@ is done</p>
 <pre><code class="python">def assert_grad_Bh(self):
     &#34;&#34;&#34;Gradient of horizontal magnetic field
 
-    $$B_h = |B_x| + |B_y|$$
+    $$B_h = norm(B_x, B_y)$$
     &#34;&#34;&#34;
     if not hasattr(self, &#39;grad_Bh_x&#39;) or not hasattr(self, &#39;grad_Bh_y&#39;):
         self.assert_Bh()
@@ -1271,7 +1312,7 @@ is done</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Magnitude of gradient vectors of x, y, z magnetic fields</p>
-<p><span><span class="MathJax_Preview">\nabla B = |\nabla B_z| + |\nabla B_y| + |\nabla B_z|</span><script type="math/tex; mode=display">\nabla B = |\nabla B_z| + |\nabla B_y| + |\nabla B_z|</script></span></p></div>
+<p><span><span class="MathJax_Preview">\nabla B = norm(\nabla B_z, \nabla B_y, \nabla B_z)</span><script type="math/tex; mode=display">\nabla B = norm(\nabla B_z, \nabla B_y, \nabla B_z)</script></span></p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -1279,7 +1320,7 @@ is done</p>
 <pre><code class="python">def assert_grad_Bm(self):
     &#34;&#34;&#34;Magnitude of gradient vectors of x, y, z magnetic fields
 
-    $$\\nabla B = |\\nabla B_z| + |\\nabla B_y| + |\\nabla B_z|$$
+    $$\\nabla B = norm(\\nabla B_z, \\nabla B_y, \\nabla B_z)$$
     &#34;&#34;&#34;
     if not hasattr(self, &#39;grad_Bm&#39;):
         self.assert_grad_B()
@@ -1361,7 +1402,7 @@ is done</p>
 </code></dt>
 <dd>
 <div class="desc"><p>Excess magnetic energy density</p>
-<p><span><span class="MathJax_Preview">\rho_e = |B_p - B_o|</span><script type="math/tex; mode=display">\rho_e = |B_p - B_o|</script></span></p></div>
+<p><span><span class="MathJax_Preview">\rho_e = norm(B_p - B_o)</span><script type="math/tex; mode=display">\rho_e = norm(B_p - B_o)</script></span></p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -1369,11 +1410,11 @@ is done</p>
 <pre><code class="python">def assert_rho(self):
     &#34;&#34;&#34;Excess magnetic energy density
 
-    $$\\rho_e = |B_p - B_o|$$
+    $$\\rho_e = norm(B_p - B_o)$$
     &#34;&#34;&#34;
     if not hasattr(self, &#39;rho&#39;):
         self.assert_Bp()
-        self.rho = (self.B - self.norm((self.Bpx, self.Bpy, self.Bpz)))**2</code></pre>
+        self.rho = (self.B - self.norm((self.Bpx, self.Bpy, self.Bpz)))**2 / (8*np.pi)</code></pre>
 </details>
 </dd>
 <dt id="flares.fields.ActiveRegionFields.assert_shear"><code class="name flex">
@@ -1434,7 +1475,7 @@ the field you use is referencing the same active region</p>
 </dd>
 <dt id="flares.fields.ActiveRegionParameters"><code class="flex name class">
 <span>class <span class="ident">ActiveRegionParameters</span></span>
-<span>(</span><span>Bz, By, Bx, num_features)</span>
+<span>(</span><span>Bz, By, Bx, num_features, chosen_funcs=None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>A place to define physical parameters of an active region</p>
@@ -1453,7 +1494,7 @@ the field you use is referencing the same active region</p>
 </summary>
 <pre><code class="python">class ActiveRegionParameters(ActiveRegionFields):
 
-    def __init__(self, Bz, By, Bx, num_features):
+    def __init__(self, Bz, By, Bx, num_features, chosen_funcs = None):
         &#34;&#34;&#34;A place to define physical parameters of an active region
 
         Args:
@@ -1463,13 +1504,25 @@ the field you use is referencing the same active region</p>
         &#34;&#34;&#34;
         super().__init__(Bz, Bx, By)
 
-        self.chosen_funcs = [   self.z_moments,self.phitot,self.phitotabs,self.h_moments, \
-                                self.gamma_moments,self.B_grad_moments,self.Bz_grad_moments, \
-                                self.Bh_grad_moments,self.J_moments,self.itot,self.itotabs, \
-                                self.itot_polarity,self.Jh_moments,self.ihtot,self.ihtotabs, \
-                                self.twist_moments,self.hc_moments,self.hctot,self.hctotabs, \
-                                self.shear_moments,self.rho_moments,self.totrho]
-        self.num_features = 56 + num_features
+        if chosen_funcs is None:
+            self.chosen_funcs = [   self.Bz_moments,self.Bz_tot,self.Bz_totabs,self.Bh_moments, \
+                                    self.gamma_moments,self.GradB_moments,self.GradBz_moments, \
+                                    self.GradBh_moments,self.J_moments,self.itot,self.itotabs, \
+                                    self.itot_polarity,self.Jh_moments,self.ihtot,self.ihtotabs, \
+                                    self.twist_moments,self.hc_moments,self.hctot,self.hctotabs, \
+                                    self.shear_moments,self.rho_moments,self.totrho, \
+                                    self.entropy]
+        else:
+            self.chosen_funcs = chosen_funcs
+
+        self.num_features = 0
+        for i in self.chosen_funcs:
+            if &#34;moments&#34; in i.__name__:
+                self.num_features += 4
+            else:
+                self.num_features += 1
+
+        self.num_features += num_features
         self.labels = []
 
     def register_func(self, func):
@@ -1492,42 +1545,48 @@ the field you use is referencing the same active region</p>
         Returns:
             np.array: a 1 dimensional array with all of the physical features computed on the subset provided by mask
         &#34;&#34;&#34;
+
         self.__switch_to_gpu()
         mask = torch.from_numpy(mask).to(dev)
 
-        features = []
-        labels = []
+        data = dict()
+
+        skip = np.count_nonzero(mask) == 0 # Empty
+
         # 1 dimensional features
         for func in self.chosen_funcs:
-            label, value = func(mask)
+            name = func.__name__
 
-            try:
-                iter(label)
-                iter(value)
-                for i in range(len(label)):
-                    labels.append(labels_prefix + label[i])
-                    features.append(value[i])
-            except TypeError:
-                labels.append(labels_prefix + label)
-                features.append(float(value))
+
+            if &#34;moment&#34; in name: # Statistical moment
+                labels = stat_moment_label(name.split(&#34;_&#34;)[0])
+                if skip:
+                    values = [0.0 for _ in labels]
+                else:
+                    values = func(mask)
+
+                for label, value in zip(labels, values):
+                    v = float(value)
+                    if np.isnan(v):
+                        print(f&#34;WARNING: {labels_prefix + label} caused nan&#34;)
+                    data[labels_prefix + label] = v
+                    
+
+            else: # Single value
+                label = name
+                if skip:
+                    value = 0.0
+                else:
+                    value = float(func(mask))
+                    v = float(value)
+                    if np.isnan(v):
+                        print(f&#34;WARNING: {labels_prefix + label} caused nan&#34;)
+                data[labels_prefix + label] = value
 
         mask = mask.detach().cpu().numpy()
         self.__come_back_from_gpu()
 
-        return np.array(features), labels
-
-
-    def fractal_dim(self, mask):
-        &#34;&#34;&#34;Fractal Dimension
-
-        Args:
-            mask (array): The mask to compute on
-
-        Returns:
-            float: Fractal dimension of mask
-        &#34;&#34;&#34;
-        mask = mask.detach().cpu().numpy() # For sklearn
-        return &#34;frac_dim&#34;, fractal_dimension(mask)
+        return data
 
     def entropy(self, mask):
         &#34;&#34;&#34;Shannon Entropy
@@ -1539,10 +1598,10 @@ the field you use is referencing the same active region</p>
             float: Shannon Entropy of mask
         &#34;&#34;&#34;
         mask = mask.detach().cpu().numpy() # For sklearn
-        return &#34;entropy&#34;, shannon_entropy(mask)
+        return shannon_entropy(mask)
 
 
-    def z_moments(self, mask):
+    def Bz_moments(self, mask):
         &#34;&#34;&#34;Statistical moments of the line-of-site magnetic flux (treated as a distribution without regard to x,y coordinates)
 
         Parameterization scalars come from
@@ -1556,9 +1615,9 @@ the field you use is referencing the same active region</p>
         Returns:
             parameter label, $M(B_z)$
         &#34;&#34;&#34;
-        return stat_moment_label(&#34;Bz&#34;), stat_moment(self.Bz[mask])
+        return stat_moment(self.Bz[mask])
 
-    def phitot(self, mask):
+    def Bz_tot(self, mask):
         &#34;&#34;&#34;Sum of the unsigned line of sight flux
 
         Parameterization scalars come from
@@ -1572,9 +1631,9 @@ the field you use is referencing the same active region</p>
         Returns:
             parameter label, $\\sum_{\\Phi\\in B_z}|\\Phi|dA$
         &#34;&#34;&#34;
-        return &#34;Bz_tot&#34;, torch.sum(torch.abs(self.Bz[mask]))
+        return torch.sum(torch.abs(self.Bz[mask]))
 
-    def phitotabs(self, mask):
+    def Bz_totabs(self, mask):
         &#34;&#34;&#34;Unsigned sum of line of sight flux
 
         Parameterization scalars come from
@@ -1588,10 +1647,10 @@ the field you use is referencing the same active region</p>
         Returns:
             parameter label, $|\\sum_{\\Phi\\in B_z}\\Phi dA|$
         &#34;&#34;&#34;
-        return &#34;Bz_totabs&#34;, torch.abs(torch.sum(self.Bz[mask]))
+        return torch.abs(torch.sum(self.Bz[mask]))
 
-    def h_moments(self, mask):
-        &#34;&#34;&#34;Statistical moments of current helicity
+    def Bh_moments(self, mask):
+        &#34;&#34;&#34;Statistical moments of horizontal magnetic field 
 
         Parameterization scalars come from
 
@@ -1608,7 +1667,8 @@ the field you use is referencing the same active region</p>
             parameter label, $M(B_h)$
         &#34;&#34;&#34;
         self.assert_Bh()
-        return stat_moment_label(&#34;hc&#34;), stat_moment(self.Bh[mask])
+        return stat_moment(self.Bh[mask])
+
     def gamma_moments(self, mask):
         &#34;&#34;&#34;Statistical momemnts of angle of magnetic field vector
 
@@ -1627,9 +1687,9 @@ the field you use is referencing the same active region</p>
             parameter label, $M(\\gamma)$
         &#34;&#34;&#34;
         self.assert_gamma()
-        return stat_moment_label(&#34;gamma&#34;), stat_moment(self.gamma[mask])
+        return stat_moment(self.gamma[mask])
 
-    def B_grad_moments(self, mask):
+    def GradB_moments(self, mask):
         &#34;&#34;&#34;Statistical moments of the gradient of the magnetic field vector
 
         Parameterization scalars come from
@@ -1641,14 +1701,15 @@ the field you use is referencing the same active region</p>
             mask (np.array): A subset of self to compute upon
 
         Asserts:
-            B = |B_x| + |B_y| + |B_z|
+            B = norm(B_x, B_y, B_z)
 
         Returns:
             parameter label, $M(\\nabla B)$
         &#34;&#34;&#34;
         self.assert_grad_B()
-        return stat_moment_label(&#34;B_grad&#34;), stat_moment(self.norm((self.grad_B_x[mask], self.grad_B_y[mask])))
-    def Bz_grad_moments(self, mask):
+        return stat_moment(self.norm((self.grad_B_x[mask], self.grad_B_y[mask])))
+
+    def GradBz_moments(self, mask):
         &#34;&#34;&#34;Statistical moments of the gradient of the z component of the magnetic flux
 
         Parameterization scalars come from
@@ -1663,8 +1724,9 @@ the field you use is referencing the same active region</p>
             parameter label, $M(\\nabla B_z)$
         &#34;&#34;&#34;
         self.assert_grad_Bz()
-        return stat_moment_label(&#34;Bz_grad&#34;), stat_moment(self.norm((self.grad_Bz_x[mask], self.grad_Bz_y[mask])))
-    def Bh_grad_moments(self, mask):
+        return stat_moment(self.norm((self.grad_Bz_x[mask], self.grad_Bz_y[mask])))
+
+    def GradBh_moments(self, mask):
         &#34;&#34;&#34;Statistical moments of the gradient of the horizontal component of the magnetic flux
 
         Parameterization scalars come from
@@ -1676,13 +1738,14 @@ the field you use is referencing the same active region</p>
             mask (np.array): A subset of self to compute upon
 
         Asserts:
-            $$B_h = |B_x| + |B_y|$$
+            $$B_h = norm(B_x, B_y)$$
 
         Returns:
             parameter label, $M(\\nabla B_h)$
         &#34;&#34;&#34;
         self.assert_grad_Bh()
-        return stat_moment_label(&#34;Bh_grad&#34;), stat_moment(self.norm((self.grad_Bh_x[mask], self.grad_Bh_y[mask])))
+        return stat_moment(self.norm((self.grad_Bh_x[mask], self.grad_Bh_y[mask])))
+        
     def J_moments(self, mask):
         &#34;&#34;&#34;Statistical moments of the gradient of the vertical current
 
@@ -1701,7 +1764,8 @@ the field you use is referencing the same active region</p>
             parameter label, $M(J_z)$
         &#34;&#34;&#34;
         self.assert_J()
-        return stat_moment_label(&#34;J&#34;), stat_moment(self.J[mask])
+        return stat_moment(self.J[mask])
+
     def itot(self, mask):
         &#34;&#34;&#34;Sum of unsigned vertical current
 
@@ -1720,7 +1784,8 @@ the field you use is referencing the same active region</p>
             parameter label, $\\sum_{j \\in J_z}|j|dA$
         &#34;&#34;&#34;
         self.assert_J()
-        return &#34;itot&#34;, torch.sum(torch.abs(self.J[mask]))
+        return torch.sum(torch.abs(self.J[mask]))
+
     def itotabs(self, mask):
         &#34;&#34;&#34;unsigned sum of vertical current
 
@@ -1739,7 +1804,8 @@ the field you use is referencing the same active region</p>
             parameter label, $|\\sum_{j \\in J_z}jdA|$
         &#34;&#34;&#34;
         self.assert_J()
-        return &#34;itot_abs&#34;, torch.abs(torch.sum(self.J[mask]))
+        return torch.abs(torch.sum(self.J[mask]))
+
     def itot_polarity(self, mask):
         &#34;&#34;&#34;sum of unsigned current regardless of sign of Bz
 
@@ -1758,7 +1824,8 @@ the field you use is referencing the same active region</p>
             parameter label, $|\\sum_{j^+ \\in J_z(B_z &gt; 0)}j^+dA| + |\\sum_{j^- \\in J_z(B_z &lt; 0)}j^-dA|$
         &#34;&#34;&#34;
         self.assert_J()
-        return &#34;itot_pol&#34;, torch.abs(torch.sum(self.J[(self.Bz &gt; 0) &amp; mask])) + torch.abs(torch.sum(self.J[(self.Bz &lt; 0) &amp; mask]))
+        return torch.abs(torch.sum(self.J[(self.Bz &gt; 0) &amp; mask])) + torch.abs(torch.sum(self.J[(self.Bz &lt; 0) &amp; mask]))
+
     def Jh_moments(self, mask):
         &#34;&#34;&#34;Statistical moments of Vertical heterogeneity current 
 
@@ -1778,7 +1845,8 @@ the field you use is referencing the same active region</p>
             parameter label, $M(J_z^h)$
         &#34;&#34;&#34;
         self.assert_Jh()
-        return &#34;Jh&#34;, stat_moment(self.Jh[mask])
+        return stat_moment(self.Jh[mask])
+
     def ihtot(self, mask):
         &#34;&#34;&#34;Sum of unsigned vertical heterogeneity current
 
@@ -1798,7 +1866,8 @@ the field you use is referencing the same active region</p>
             parameter label, $\\sum_{i\\in J_z^h}|i dA|$
         &#34;&#34;&#34;
         self.assert_Jh()
-        return &#34;ihtot&#34;, torch.sum(torch.abs(self.Jh[mask]))
+        return torch.sum(torch.abs(self.Jh[mask]))
+
     def ihtotabs(self, mask):
         &#34;&#34;&#34;Unsigned Sum of vertical heterogeneity current
 
@@ -1818,7 +1887,8 @@ the field you use is referencing the same active region</p>
             parameter label, $|\\sum_{i\\in J_z^h}i dA|$
         &#34;&#34;&#34;
         self.assert_Jh()
-        return &#34;ihtot_abs&#34;, torch.abs(torch.sum(self.Jh[mask]))
+        return torch.abs(torch.sum(self.Jh[mask]))
+
     def twist_moments(self, mask):
         &#34;&#34;&#34;Statistical moments of twist
 
@@ -1838,7 +1908,11 @@ the field you use is referencing the same active region</p>
             parameter label, $M(T)$
         &#34;&#34;&#34;
         self.assert_J()
-        return stat_moment_label(&#34;twist&#34;), stat_moment(self.J[mask] / self.Bz[mask])
+        # Assume J(B = 0) = 0 - so twist is &#34;1&#34;
+        JJ = C * torch.nan_to_num(self.J[mask] / self.Bz[mask], nan = 1.0)
+        JJ[torch.abs(JJ) == float(&#39;inf&#39;)] = 1.0
+        return stat_moment(JJ)
+
     def hc_moments(self, mask):
         &#34;&#34;&#34;Statistical moments of current helicity
 
@@ -1857,7 +1931,8 @@ the field you use is referencing the same active region</p>
             parameter label, $M(h_c)$
         &#34;&#34;&#34;
         self.assert_hc()
-        return stat_moment_label(&#34;hc&#34;), stat_moment(self.hc[mask])
+        return stat_moment(self.hc[mask])
+
     def hctot(self, mask):
         &#34;&#34;&#34;Sum of unsigned current helicity
 
@@ -1876,7 +1951,8 @@ the field you use is referencing the same active region</p>
             parameter label, $\\sum_{h \\in h_c}|h|dA$
         &#34;&#34;&#34;
         self.assert_hc()
-        return &#34;hc_tot&#34;, torch.sum(torch.abs(self.hc[mask]))
+        return torch.sum(torch.abs(self.hc[mask]))
+
     def hctotabs(self, mask):
         &#34;&#34;&#34;Unsigned sum of current helicity
 
@@ -1895,7 +1971,8 @@ the field you use is referencing the same active region</p>
             parameter label, $|\\sum_{h \\in h_c}hdA|$
         &#34;&#34;&#34;
         self.assert_hc()
-        return &#34;hc_tot_abs&#34;, torch.abs(torch.sum(self.hc[mask]))
+        return torch.abs(torch.sum(self.hc[mask]))
+
     def shear_moments(self, mask):
         &#34;&#34;&#34;Statistical moments of shear angle
 
@@ -1914,7 +1991,7 @@ the field you use is referencing the same active region</p>
             parameter label, $M(\\Psi)$
         &#34;&#34;&#34;
         self.assert_shear() # Pretty big function call right here
-        return stat_moment_label(&#34;shear&#34;), stat_moment(self.shear[mask])
+        return stat_moment(self.shear[mask])
 
     def rho_moments(self, mask):
         &#34;&#34;&#34;Statistical moments of magnetic energy density
@@ -1934,7 +2011,7 @@ the field you use is referencing the same active region</p>
             parameter label, $M(\\rho_e)$
         &#34;&#34;&#34;
         self.assert_rho()
-        return stat_moment_label(&#34;rho&#34;), stat_moment(self.rho[mask])
+        return stat_moment(self.rho[mask])
 
     def totrho(self, mask):
         &#34;&#34;&#34;Total photospheric excess magnetic energy
@@ -1954,7 +2031,7 @@ the field you use is referencing the same active region</p>
             parameter label, $$\\sum_{p\\in p_e)pdA$$
         &#34;&#34;&#34;
         self.assert_rho()
-        return &#34;totrho&#34;, torch.sum(self.rho[mask])
+        return torch.sum(self.rho[mask])
 
 
     def __switch_to_gpu(self):
@@ -1982,10 +2059,7 @@ the field you use is referencing the same active region</p>
         Returns:
             The result of summing the application of torch.abs() on all elements of data
         &#34;&#34;&#34;
-        n = 0
-        for i in data:
-            n += torch.abs(i)
-        return n</code></pre>
+        return norm(data)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -1997,53 +2071,11 @@ the field you use is referencing the same active region</p>
 </ul>
 <h3>Methods</h3>
 <dl>
-<dt id="flares.fields.ActiveRegionParameters.B_grad_moments"><code class="name flex">
-<span>def <span class="ident">B_grad_moments</span></span>(<span>self, mask)</span>
+<dt id="flares.fields.ActiveRegionParameters.Bh_moments"><code class="name flex">
+<span>def <span class="ident">Bh_moments</span></span>(<span>self, mask)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Statistical moments of the gradient of the magnetic field vector</p>
-<p>Parameterization scalars come from</p>
-<p><strong>K. D. Leka and G. Barnes. Photospheric magnetic field properties of flaring versus flare-quiet active regions. ii.
-discriminant analysis. <em>The Astrophysical Journal</em> 595(2):1296-1306, 2003.</strong></p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>mask</code></strong> :&ensp;<code>np.array</code></dt>
-<dd>A subset of self to compute upon</dd>
-</dl>
-<h2 id="asserts">Asserts</h2>
-<p>B = |B_x| + |B_y| + |B_z|</p>
-<h2 id="returns">Returns</h2>
-<p>parameter label, $M(\nabla B)$</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def B_grad_moments(self, mask):
-    &#34;&#34;&#34;Statistical moments of the gradient of the magnetic field vector
-
-    Parameterization scalars come from
-
-    **K. D. Leka and G. Barnes. Photospheric magnetic field properties of flaring versus flare-quiet active regions. ii. 
-    discriminant analysis. *The Astrophysical Journal* 595(2):1296-1306, 2003.**
-
-    Args:
-        mask (np.array): A subset of self to compute upon
-
-    Asserts:
-        B = |B_x| + |B_y| + |B_z|
-
-    Returns:
-        parameter label, $M(\\nabla B)$
-    &#34;&#34;&#34;
-    self.assert_grad_B()
-    return stat_moment_label(&#34;B_grad&#34;), stat_moment(self.norm((self.grad_B_x[mask], self.grad_B_y[mask])))</code></pre>
-</details>
-</dd>
-<dt id="flares.fields.ActiveRegionParameters.Bh_grad_moments"><code class="name flex">
-<span>def <span class="ident">Bh_grad_moments</span></span>(<span>self, mask)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Statistical moments of the gradient of the horizontal component of the magnetic flux</p>
+<div class="desc"><p>Statistical moments of horizontal magnetic field </p>
 <p>Parameterization scalars come from</p>
 <p><strong>K. D. Leka and G. Barnes. Photospheric magnetic field properties of flaring versus flare-quiet active regions. ii.
 discriminant analysis. <em>The Astrophysical Journal</em> 595(2):1296-1306, 2003.</strong></p>
@@ -2055,13 +2087,13 @@ discriminant analysis. <em>The Astrophysical Journal</em> 595(2):1296-1306, 2003
 <h2 id="asserts">Asserts</h2>
 <p><span><span class="MathJax_Preview">B_h = |B_x| + |B_y|</span><script type="math/tex; mode=display">B_h = |B_x| + |B_y|</script></span></p>
 <h2 id="returns">Returns</h2>
-<p>parameter label, $M(\nabla B_h)$</p></div>
+<p>parameter label, $M(B_h)$</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def Bh_grad_moments(self, mask):
-    &#34;&#34;&#34;Statistical moments of the gradient of the horizontal component of the magnetic flux
+<pre><code class="python">def Bh_moments(self, mask):
+    &#34;&#34;&#34;Statistical moments of horizontal magnetic field 
 
     Parameterization scalars come from
 
@@ -2075,14 +2107,206 @@ discriminant analysis. <em>The Astrophysical Journal</em> 595(2):1296-1306, 2003
         $$B_h = |B_x| + |B_y|$$
 
     Returns:
+        parameter label, $M(B_h)$
+    &#34;&#34;&#34;
+    self.assert_Bh()
+    return stat_moment(self.Bh[mask])</code></pre>
+</details>
+</dd>
+<dt id="flares.fields.ActiveRegionParameters.Bz_moments"><code class="name flex">
+<span>def <span class="ident">Bz_moments</span></span>(<span>self, mask)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Statistical moments of the line-of-site magnetic flux (treated as a distribution without regard to x,y coordinates)</p>
+<p>Parameterization scalars come from</p>
+<p><strong>K. D. Leka and G. Barnes. Photospheric magnetic field properties of flaring versus flare-quiet active regions. ii.
+discriminant analysis. <em>The Astrophysical Journal</em> 595(2):1296-1306, 2003.</strong></p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>mask</code></strong> :&ensp;<code>np.array</code></dt>
+<dd>A subset of self to compute upon</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>parameter label, $M(B_z)$</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def Bz_moments(self, mask):
+    &#34;&#34;&#34;Statistical moments of the line-of-site magnetic flux (treated as a distribution without regard to x,y coordinates)
+
+    Parameterization scalars come from
+
+    **K. D. Leka and G. Barnes. Photospheric magnetic field properties of flaring versus flare-quiet active regions. ii. 
+    discriminant analysis. *The Astrophysical Journal* 595(2):1296-1306, 2003.**
+
+    Args:
+        mask (np.array): A subset of self to compute upon
+
+    Returns:
+        parameter label, $M(B_z)$
+    &#34;&#34;&#34;
+    return stat_moment(self.Bz[mask])</code></pre>
+</details>
+</dd>
+<dt id="flares.fields.ActiveRegionParameters.Bz_tot"><code class="name flex">
+<span>def <span class="ident">Bz_tot</span></span>(<span>self, mask)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Sum of the unsigned line of sight flux</p>
+<p>Parameterization scalars come from</p>
+<p><strong>K. D. Leka and G. Barnes. Photospheric magnetic field properties of flaring versus flare-quiet active regions. ii.
+discriminant analysis. <em>The Astrophysical Journal</em> 595(2):1296-1306, 2003.</strong></p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>mask</code></strong> :&ensp;<code>np.array</code></dt>
+<dd>A subset of self to compute upon</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>parameter label, $\sum_{\Phi\in B_z}|\Phi|dA$</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def Bz_tot(self, mask):
+    &#34;&#34;&#34;Sum of the unsigned line of sight flux
+
+    Parameterization scalars come from
+
+    **K. D. Leka and G. Barnes. Photospheric magnetic field properties of flaring versus flare-quiet active regions. ii. 
+    discriminant analysis. *The Astrophysical Journal* 595(2):1296-1306, 2003.**
+
+    Args:
+        mask (np.array): A subset of self to compute upon
+
+    Returns:
+        parameter label, $\\sum_{\\Phi\\in B_z}|\\Phi|dA$
+    &#34;&#34;&#34;
+    return torch.sum(torch.abs(self.Bz[mask]))</code></pre>
+</details>
+</dd>
+<dt id="flares.fields.ActiveRegionParameters.Bz_totabs"><code class="name flex">
+<span>def <span class="ident">Bz_totabs</span></span>(<span>self, mask)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Unsigned sum of line of sight flux</p>
+<p>Parameterization scalars come from</p>
+<p><strong>K. D. Leka and G. Barnes. Photospheric magnetic field properties of flaring versus flare-quiet active regions. ii.
+discriminant analysis. <em>The Astrophysical Journal</em> 595(2):1296-1306, 2003.</strong></p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>mask</code></strong> :&ensp;<code>np.array</code></dt>
+<dd>A subset of self to compute upon</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>parameter label, $|\sum_{\Phi\in B_z}\Phi dA|$</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def Bz_totabs(self, mask):
+    &#34;&#34;&#34;Unsigned sum of line of sight flux
+
+    Parameterization scalars come from
+
+    **K. D. Leka and G. Barnes. Photospheric magnetic field properties of flaring versus flare-quiet active regions. ii. 
+    discriminant analysis. *The Astrophysical Journal* 595(2):1296-1306, 2003.**
+
+    Args:
+        mask (np.array): A subset of self to compute upon
+
+    Returns:
+        parameter label, $|\\sum_{\\Phi\\in B_z}\\Phi dA|$
+    &#34;&#34;&#34;
+    return torch.abs(torch.sum(self.Bz[mask]))</code></pre>
+</details>
+</dd>
+<dt id="flares.fields.ActiveRegionParameters.GradB_moments"><code class="name flex">
+<span>def <span class="ident">GradB_moments</span></span>(<span>self, mask)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Statistical moments of the gradient of the magnetic field vector</p>
+<p>Parameterization scalars come from</p>
+<p><strong>K. D. Leka and G. Barnes. Photospheric magnetic field properties of flaring versus flare-quiet active regions. ii.
+discriminant analysis. <em>The Astrophysical Journal</em> 595(2):1296-1306, 2003.</strong></p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>mask</code></strong> :&ensp;<code>np.array</code></dt>
+<dd>A subset of self to compute upon</dd>
+</dl>
+<h2 id="asserts">Asserts</h2>
+<p>B = norm(B_x, B_y, B_z)</p>
+<h2 id="returns">Returns</h2>
+<p>parameter label, $M(\nabla B)$</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def GradB_moments(self, mask):
+    &#34;&#34;&#34;Statistical moments of the gradient of the magnetic field vector
+
+    Parameterization scalars come from
+
+    **K. D. Leka and G. Barnes. Photospheric magnetic field properties of flaring versus flare-quiet active regions. ii. 
+    discriminant analysis. *The Astrophysical Journal* 595(2):1296-1306, 2003.**
+
+    Args:
+        mask (np.array): A subset of self to compute upon
+
+    Asserts:
+        B = norm(B_x, B_y, B_z)
+
+    Returns:
+        parameter label, $M(\\nabla B)$
+    &#34;&#34;&#34;
+    self.assert_grad_B()
+    return stat_moment(self.norm((self.grad_B_x[mask], self.grad_B_y[mask])))</code></pre>
+</details>
+</dd>
+<dt id="flares.fields.ActiveRegionParameters.GradBh_moments"><code class="name flex">
+<span>def <span class="ident">GradBh_moments</span></span>(<span>self, mask)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Statistical moments of the gradient of the horizontal component of the magnetic flux</p>
+<p>Parameterization scalars come from</p>
+<p><strong>K. D. Leka and G. Barnes. Photospheric magnetic field properties of flaring versus flare-quiet active regions. ii.
+discriminant analysis. <em>The Astrophysical Journal</em> 595(2):1296-1306, 2003.</strong></p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>mask</code></strong> :&ensp;<code>np.array</code></dt>
+<dd>A subset of self to compute upon</dd>
+</dl>
+<h2 id="asserts">Asserts</h2>
+<p><span><span class="MathJax_Preview">B_h = norm(B_x, B_y)</span><script type="math/tex; mode=display">B_h = norm(B_x, B_y)</script></span></p>
+<h2 id="returns">Returns</h2>
+<p>parameter label, $M(\nabla B_h)$</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def GradBh_moments(self, mask):
+    &#34;&#34;&#34;Statistical moments of the gradient of the horizontal component of the magnetic flux
+
+    Parameterization scalars come from
+
+    **K. D. Leka and G. Barnes. Photospheric magnetic field properties of flaring versus flare-quiet active regions. ii. 
+    discriminant analysis. *The Astrophysical Journal* 595(2):1296-1306, 2003.**
+
+    Args:
+        mask (np.array): A subset of self to compute upon
+
+    Asserts:
+        $$B_h = norm(B_x, B_y)$$
+
+    Returns:
         parameter label, $M(\\nabla B_h)$
     &#34;&#34;&#34;
     self.assert_grad_Bh()
-    return stat_moment_label(&#34;Bh_grad&#34;), stat_moment(self.norm((self.grad_Bh_x[mask], self.grad_Bh_y[mask])))</code></pre>
+    return stat_moment(self.norm((self.grad_Bh_x[mask], self.grad_Bh_y[mask])))</code></pre>
 </details>
 </dd>
-<dt id="flares.fields.ActiveRegionParameters.Bz_grad_moments"><code class="name flex">
-<span>def <span class="ident">Bz_grad_moments</span></span>(<span>self, mask)</span>
+<dt id="flares.fields.ActiveRegionParameters.GradBz_moments"><code class="name flex">
+<span>def <span class="ident">GradBz_moments</span></span>(<span>self, mask)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Statistical moments of the gradient of the z component of the magnetic flux</p>
@@ -2100,7 +2324,7 @@ discriminant analysis. <em>The Astrophysical Journal</em> 595(2):1296-1306, 2003
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def Bz_grad_moments(self, mask):
+<pre><code class="python">def GradBz_moments(self, mask):
     &#34;&#34;&#34;Statistical moments of the gradient of the z component of the magnetic flux
 
     Parameterization scalars come from
@@ -2115,7 +2339,7 @@ discriminant analysis. <em>The Astrophysical Journal</em> 595(2):1296-1306, 2003
         parameter label, $M(\\nabla B_z)$
     &#34;&#34;&#34;
     self.assert_grad_Bz()
-    return stat_moment_label(&#34;Bz_grad&#34;), stat_moment(self.norm((self.grad_Bz_x[mask], self.grad_Bz_y[mask])))</code></pre>
+    return stat_moment(self.norm((self.grad_Bz_x[mask], self.grad_Bz_y[mask])))</code></pre>
 </details>
 </dd>
 <dt id="flares.fields.ActiveRegionParameters.J_moments"><code class="name flex">
@@ -2157,7 +2381,7 @@ discriminant analysis. <em>The Astrophysical Journal</em> 595(2):1296-1306, 2003
         parameter label, $M(J_z)$
     &#34;&#34;&#34;
     self.assert_J()
-    return stat_moment_label(&#34;J&#34;), stat_moment(self.J[mask])</code></pre>
+    return stat_moment(self.J[mask])</code></pre>
 </details>
 </dd>
 <dt id="flares.fields.ActiveRegionParameters.Jh_moments"><code class="name flex">
@@ -2201,7 +2425,7 @@ discriminant analysis. <em>The Astrophysical Journal</em> 595(2):1296-1306, 2003
         parameter label, $M(J_z^h)$
     &#34;&#34;&#34;
     self.assert_Jh()
-    return &#34;Jh&#34;, stat_moment(self.Jh[mask])</code></pre>
+    return stat_moment(self.Jh[mask])</code></pre>
 </details>
 </dd>
 <dt id="flares.fields.ActiveRegionParameters.entropy"><code class="name flex">
@@ -2233,39 +2457,7 @@ discriminant analysis. <em>The Astrophysical Journal</em> 595(2):1296-1306, 2003
         float: Shannon Entropy of mask
     &#34;&#34;&#34;
     mask = mask.detach().cpu().numpy() # For sklearn
-    return &#34;entropy&#34;, shannon_entropy(mask)</code></pre>
-</details>
-</dd>
-<dt id="flares.fields.ActiveRegionParameters.fractal_dim"><code class="name flex">
-<span>def <span class="ident">fractal_dim</span></span>(<span>self, mask)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Fractal Dimension</p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>mask</code></strong> :&ensp;<code>array</code></dt>
-<dd>The mask to compute on</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><code>float</code></dt>
-<dd>Fractal dimension of mask</dd>
-</dl></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def fractal_dim(self, mask):
-    &#34;&#34;&#34;Fractal Dimension
-
-    Args:
-        mask (array): The mask to compute on
-
-    Returns:
-        float: Fractal dimension of mask
-    &#34;&#34;&#34;
-    mask = mask.detach().cpu().numpy() # For sklearn
-    return &#34;frac_dim&#34;, fractal_dimension(mask)</code></pre>
+    return shannon_entropy(mask)</code></pre>
 </details>
 </dd>
 <dt id="flares.fields.ActiveRegionParameters.gamma_moments"><code class="name flex">
@@ -2307,49 +2499,7 @@ discriminant analysis. <em>The Astrophysical Journal</em> 595(2):1296-1306, 2003
         parameter label, $M(\\gamma)$
     &#34;&#34;&#34;
     self.assert_gamma()
-    return stat_moment_label(&#34;gamma&#34;), stat_moment(self.gamma[mask])</code></pre>
-</details>
-</dd>
-<dt id="flares.fields.ActiveRegionParameters.h_moments"><code class="name flex">
-<span>def <span class="ident">h_moments</span></span>(<span>self, mask)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Statistical moments of current helicity</p>
-<p>Parameterization scalars come from</p>
-<p><strong>K. D. Leka and G. Barnes. Photospheric magnetic field properties of flaring versus flare-quiet active regions. ii.
-discriminant analysis. <em>The Astrophysical Journal</em> 595(2):1296-1306, 2003.</strong></p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>mask</code></strong> :&ensp;<code>np.array</code></dt>
-<dd>A subset of self to compute upon</dd>
-</dl>
-<h2 id="asserts">Asserts</h2>
-<p><span><span class="MathJax_Preview">B_h = |B_x| + |B_y|</span><script type="math/tex; mode=display">B_h = |B_x| + |B_y|</script></span></p>
-<h2 id="returns">Returns</h2>
-<p>parameter label, $M(B_h)$</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def h_moments(self, mask):
-    &#34;&#34;&#34;Statistical moments of current helicity
-
-    Parameterization scalars come from
-
-    **K. D. Leka and G. Barnes. Photospheric magnetic field properties of flaring versus flare-quiet active regions. ii. 
-    discriminant analysis. *The Astrophysical Journal* 595(2):1296-1306, 2003.**
-
-    Args:
-        mask (np.array): A subset of self to compute upon
-
-    Asserts:
-        $$B_h = |B_x| + |B_y|$$
-
-    Returns:
-        parameter label, $M(B_h)$
-    &#34;&#34;&#34;
-    self.assert_Bh()
-    return stat_moment_label(&#34;hc&#34;), stat_moment(self.Bh[mask])</code></pre>
+    return stat_moment(self.gamma[mask])</code></pre>
 </details>
 </dd>
 <dt id="flares.fields.ActiveRegionParameters.hc_moments"><code class="name flex">
@@ -2391,7 +2541,7 @@ discriminant analysis. <em>The Astrophysical Journal</em> 595(2):1296-1306, 2003
         parameter label, $M(h_c)$
     &#34;&#34;&#34;
     self.assert_hc()
-    return stat_moment_label(&#34;hc&#34;), stat_moment(self.hc[mask])</code></pre>
+    return stat_moment(self.hc[mask])</code></pre>
 </details>
 </dd>
 <dt id="flares.fields.ActiveRegionParameters.hctot"><code class="name flex">
@@ -2433,7 +2583,7 @@ discriminant analysis. <em>The Astrophysical Journal</em> 595(2):1296-1306, 2003
         parameter label, $\\sum_{h \\in h_c}|h|dA$
     &#34;&#34;&#34;
     self.assert_hc()
-    return &#34;hc_tot&#34;, torch.sum(torch.abs(self.hc[mask]))</code></pre>
+    return torch.sum(torch.abs(self.hc[mask]))</code></pre>
 </details>
 </dd>
 <dt id="flares.fields.ActiveRegionParameters.hctotabs"><code class="name flex">
@@ -2475,7 +2625,7 @@ discriminant analysis. <em>The Astrophysical Journal</em> 595(2):1296-1306, 2003
         parameter label, $|\\sum_{h \\in h_c}hdA|$
     &#34;&#34;&#34;
     self.assert_hc()
-    return &#34;hc_tot_abs&#34;, torch.abs(torch.sum(self.hc[mask]))</code></pre>
+    return torch.abs(torch.sum(self.hc[mask]))</code></pre>
 </details>
 </dd>
 <dt id="flares.fields.ActiveRegionParameters.ihtot"><code class="name flex">
@@ -2519,7 +2669,7 @@ discriminant analysis. <em>The Astrophysical Journal</em> 595(2):1296-1306, 2003
         parameter label, $\\sum_{i\\in J_z^h}|i dA|$
     &#34;&#34;&#34;
     self.assert_Jh()
-    return &#34;ihtot&#34;, torch.sum(torch.abs(self.Jh[mask]))</code></pre>
+    return torch.sum(torch.abs(self.Jh[mask]))</code></pre>
 </details>
 </dd>
 <dt id="flares.fields.ActiveRegionParameters.ihtotabs"><code class="name flex">
@@ -2563,7 +2713,7 @@ discriminant analysis. <em>The Astrophysical Journal</em> 595(2):1296-1306, 2003
         parameter label, $|\\sum_{i\\in J_z^h}i dA|$
     &#34;&#34;&#34;
     self.assert_Jh()
-    return &#34;ihtot_abs&#34;, torch.abs(torch.sum(self.Jh[mask]))</code></pre>
+    return torch.abs(torch.sum(self.Jh[mask]))</code></pre>
 </details>
 </dd>
 <dt id="flares.fields.ActiveRegionParameters.itot"><code class="name flex">
@@ -2605,7 +2755,7 @@ discriminant analysis. <em>The Astrophysical Journal</em> 595(2):1296-1306, 2003
         parameter label, $\\sum_{j \\in J_z}|j|dA$
     &#34;&#34;&#34;
     self.assert_J()
-    return &#34;itot&#34;, torch.sum(torch.abs(self.J[mask]))</code></pre>
+    return torch.sum(torch.abs(self.J[mask]))</code></pre>
 </details>
 </dd>
 <dt id="flares.fields.ActiveRegionParameters.itot_polarity"><code class="name flex">
@@ -2647,7 +2797,7 @@ discriminant analysis. <em>The Astrophysical Journal</em> 595(2):1296-1306, 2003
         parameter label, $|\\sum_{j^+ \\in J_z(B_z &gt; 0)}j^+dA| + |\\sum_{j^- \\in J_z(B_z &lt; 0)}j^-dA|$
     &#34;&#34;&#34;
     self.assert_J()
-    return &#34;itot_pol&#34;, torch.abs(torch.sum(self.J[(self.Bz &gt; 0) &amp; mask])) + torch.abs(torch.sum(self.J[(self.Bz &lt; 0) &amp; mask]))</code></pre>
+    return torch.abs(torch.sum(self.J[(self.Bz &gt; 0) &amp; mask])) + torch.abs(torch.sum(self.J[(self.Bz &lt; 0) &amp; mask]))</code></pre>
 </details>
 </dd>
 <dt id="flares.fields.ActiveRegionParameters.itotabs"><code class="name flex">
@@ -2689,7 +2839,7 @@ discriminant analysis. <em>The Astrophysical Journal</em> 595(2):1296-1306, 2003
         parameter label, $|\\sum_{j \\in J_z}jdA|$
     &#34;&#34;&#34;
     self.assert_J()
-    return &#34;itot_abs&#34;, torch.abs(torch.sum(self.J[mask]))</code></pre>
+    return torch.abs(torch.sum(self.J[mask]))</code></pre>
 </details>
 </dd>
 <dt id="flares.fields.ActiveRegionParameters.norm"><code class="name flex">
@@ -2717,82 +2867,7 @@ discriminant analysis. <em>The Astrophysical Journal</em> 595(2):1296-1306, 2003
     Returns:
         The result of summing the application of torch.abs() on all elements of data
     &#34;&#34;&#34;
-    n = 0
-    for i in data:
-        n += torch.abs(i)
-    return n</code></pre>
-</details>
-</dd>
-<dt id="flares.fields.ActiveRegionParameters.phitot"><code class="name flex">
-<span>def <span class="ident">phitot</span></span>(<span>self, mask)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Sum of the unsigned line of sight flux</p>
-<p>Parameterization scalars come from</p>
-<p><strong>K. D. Leka and G. Barnes. Photospheric magnetic field properties of flaring versus flare-quiet active regions. ii.
-discriminant analysis. <em>The Astrophysical Journal</em> 595(2):1296-1306, 2003.</strong></p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>mask</code></strong> :&ensp;<code>np.array</code></dt>
-<dd>A subset of self to compute upon</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<p>parameter label, $\sum_{\Phi\in B_z}|\Phi|dA$</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def phitot(self, mask):
-    &#34;&#34;&#34;Sum of the unsigned line of sight flux
-
-    Parameterization scalars come from
-
-    **K. D. Leka and G. Barnes. Photospheric magnetic field properties of flaring versus flare-quiet active regions. ii. 
-    discriminant analysis. *The Astrophysical Journal* 595(2):1296-1306, 2003.**
-
-    Args:
-        mask (np.array): A subset of self to compute upon
-
-    Returns:
-        parameter label, $\\sum_{\\Phi\\in B_z}|\\Phi|dA$
-    &#34;&#34;&#34;
-    return &#34;Bz_tot&#34;, torch.sum(torch.abs(self.Bz[mask]))</code></pre>
-</details>
-</dd>
-<dt id="flares.fields.ActiveRegionParameters.phitotabs"><code class="name flex">
-<span>def <span class="ident">phitotabs</span></span>(<span>self, mask)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Unsigned sum of line of sight flux</p>
-<p>Parameterization scalars come from</p>
-<p><strong>K. D. Leka and G. Barnes. Photospheric magnetic field properties of flaring versus flare-quiet active regions. ii.
-discriminant analysis. <em>The Astrophysical Journal</em> 595(2):1296-1306, 2003.</strong></p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>mask</code></strong> :&ensp;<code>np.array</code></dt>
-<dd>A subset of self to compute upon</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<p>parameter label, $|\sum_{\Phi\in B_z}\Phi dA|$</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def phitotabs(self, mask):
-    &#34;&#34;&#34;Unsigned sum of line of sight flux
-
-    Parameterization scalars come from
-
-    **K. D. Leka and G. Barnes. Photospheric magnetic field properties of flaring versus flare-quiet active regions. ii. 
-    discriminant analysis. *The Astrophysical Journal* 595(2):1296-1306, 2003.**
-
-    Args:
-        mask (np.array): A subset of self to compute upon
-
-    Returns:
-        parameter label, $|\\sum_{\\Phi\\in B_z}\\Phi dA|$
-    &#34;&#34;&#34;
-    return &#34;Bz_totabs&#34;, torch.abs(torch.sum(self.Bz[mask]))</code></pre>
+    return norm(data)</code></pre>
 </details>
 </dd>
 <dt id="flares.fields.ActiveRegionParameters.physical_features"><code class="name flex">
@@ -2829,29 +2904,48 @@ flux <em>within that neutral line</em>)</p>
     Returns:
         np.array: a 1 dimensional array with all of the physical features computed on the subset provided by mask
     &#34;&#34;&#34;
+
     self.__switch_to_gpu()
     mask = torch.from_numpy(mask).to(dev)
 
-    features = []
-    labels = []
+    data = dict()
+
+    skip = np.count_nonzero(mask) == 0 # Empty
+
     # 1 dimensional features
     for func in self.chosen_funcs:
-        label, value = func(mask)
+        name = func.__name__
 
-        try:
-            iter(label)
-            iter(value)
-            for i in range(len(label)):
-                labels.append(labels_prefix + label[i])
-                features.append(value[i])
-        except TypeError:
-            labels.append(labels_prefix + label)
-            features.append(float(value))
+
+        if &#34;moment&#34; in name: # Statistical moment
+            labels = stat_moment_label(name.split(&#34;_&#34;)[0])
+            if skip:
+                values = [0.0 for _ in labels]
+            else:
+                values = func(mask)
+
+            for label, value in zip(labels, values):
+                v = float(value)
+                if np.isnan(v):
+                    print(f&#34;WARNING: {labels_prefix + label} caused nan&#34;)
+                data[labels_prefix + label] = v
+                
+
+        else: # Single value
+            label = name
+            if skip:
+                value = 0.0
+            else:
+                value = float(func(mask))
+                v = float(value)
+                if np.isnan(v):
+                    print(f&#34;WARNING: {labels_prefix + label} caused nan&#34;)
+            data[labels_prefix + label] = value
 
     mask = mask.detach().cpu().numpy()
     self.__come_back_from_gpu()
 
-    return np.array(features), labels</code></pre>
+    return data</code></pre>
 </details>
 </dd>
 <dt id="flares.fields.ActiveRegionParameters.register_func"><code class="name flex">
@@ -2916,7 +3010,7 @@ discriminant analysis. <em>The Astrophysical Journal</em> 595(2):1296-1306, 2003
         parameter label, $M(\\rho_e)$
     &#34;&#34;&#34;
     self.assert_rho()
-    return stat_moment_label(&#34;rho&#34;), stat_moment(self.rho[mask])</code></pre>
+    return stat_moment(self.rho[mask])</code></pre>
 </details>
 </dd>
 <dt id="flares.fields.ActiveRegionParameters.shear_moments"><code class="name flex">
@@ -2958,7 +3052,7 @@ discriminant analysis. <em>The Astrophysical Journal</em> 595(2):1296-1306, 2003
         parameter label, $M(\\Psi)$
     &#34;&#34;&#34;
     self.assert_shear() # Pretty big function call right here
-    return stat_moment_label(&#34;shear&#34;), stat_moment(self.shear[mask])</code></pre>
+    return stat_moment(self.shear[mask])</code></pre>
 </details>
 </dd>
 <dt id="flares.fields.ActiveRegionParameters.totrho"><code class="name flex">
@@ -3000,7 +3094,7 @@ discriminant analysis. <em>The Astrophysical Journal</em> 595(2):1296-1306, 2003
         parameter label, $$\\sum_{p\\in p_e)pdA$$
     &#34;&#34;&#34;
     self.assert_rho()
-    return &#34;totrho&#34;, torch.sum(self.rho[mask])</code></pre>
+    return torch.sum(self.rho[mask])</code></pre>
 </details>
 </dd>
 <dt id="flares.fields.ActiveRegionParameters.twist_moments"><code class="name flex">
@@ -3044,43 +3138,10 @@ discriminant analysis. <em>The Astrophysical Journal</em> 595(2):1296-1306, 2003
         parameter label, $M(T)$
     &#34;&#34;&#34;
     self.assert_J()
-    return stat_moment_label(&#34;twist&#34;), stat_moment(self.J[mask] / self.Bz[mask])</code></pre>
-</details>
-</dd>
-<dt id="flares.fields.ActiveRegionParameters.z_moments"><code class="name flex">
-<span>def <span class="ident">z_moments</span></span>(<span>self, mask)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Statistical moments of the line-of-site magnetic flux (treated as a distribution without regard to x,y coordinates)</p>
-<p>Parameterization scalars come from</p>
-<p><strong>K. D. Leka and G. Barnes. Photospheric magnetic field properties of flaring versus flare-quiet active regions. ii.
-discriminant analysis. <em>The Astrophysical Journal</em> 595(2):1296-1306, 2003.</strong></p>
-<h2 id="args">Args</h2>
-<dl>
-<dt><strong><code>mask</code></strong> :&ensp;<code>np.array</code></dt>
-<dd>A subset of self to compute upon</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<p>parameter label, $M(B_z)$</p></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def z_moments(self, mask):
-    &#34;&#34;&#34;Statistical moments of the line-of-site magnetic flux (treated as a distribution without regard to x,y coordinates)
-
-    Parameterization scalars come from
-
-    **K. D. Leka and G. Barnes. Photospheric magnetic field properties of flaring versus flare-quiet active regions. ii. 
-    discriminant analysis. *The Astrophysical Journal* 595(2):1296-1306, 2003.**
-
-    Args:
-        mask (np.array): A subset of self to compute upon
-
-    Returns:
-        parameter label, $M(B_z)$
-    &#34;&#34;&#34;
-    return stat_moment_label(&#34;Bz&#34;), stat_moment(self.Bz[mask])</code></pre>
+    # Assume J(B = 0) = 0 - so twist is &#34;1&#34;
+    JJ = C * torch.nan_to_num(self.J[mask] / self.Bz[mask], nan = 1.0)
+    JJ[torch.abs(JJ) == float(&#39;inf&#39;)] = 1.0
+    return stat_moment(JJ)</code></pre>
 </details>
 </dd>
 </dl>
@@ -3148,15 +3209,17 @@ discriminant analysis. <em>The Astrophysical Journal</em> 595(2):1296-1306, 2003
 <li>
 <h4><code><a title="flares.fields.ActiveRegionParameters" href="#flares.fields.ActiveRegionParameters">ActiveRegionParameters</a></code></h4>
 <ul class="two-column">
-<li><code><a title="flares.fields.ActiveRegionParameters.B_grad_moments" href="#flares.fields.ActiveRegionParameters.B_grad_moments">B_grad_moments</a></code></li>
-<li><code><a title="flares.fields.ActiveRegionParameters.Bh_grad_moments" href="#flares.fields.ActiveRegionParameters.Bh_grad_moments">Bh_grad_moments</a></code></li>
-<li><code><a title="flares.fields.ActiveRegionParameters.Bz_grad_moments" href="#flares.fields.ActiveRegionParameters.Bz_grad_moments">Bz_grad_moments</a></code></li>
+<li><code><a title="flares.fields.ActiveRegionParameters.Bh_moments" href="#flares.fields.ActiveRegionParameters.Bh_moments">Bh_moments</a></code></li>
+<li><code><a title="flares.fields.ActiveRegionParameters.Bz_moments" href="#flares.fields.ActiveRegionParameters.Bz_moments">Bz_moments</a></code></li>
+<li><code><a title="flares.fields.ActiveRegionParameters.Bz_tot" href="#flares.fields.ActiveRegionParameters.Bz_tot">Bz_tot</a></code></li>
+<li><code><a title="flares.fields.ActiveRegionParameters.Bz_totabs" href="#flares.fields.ActiveRegionParameters.Bz_totabs">Bz_totabs</a></code></li>
+<li><code><a title="flares.fields.ActiveRegionParameters.GradB_moments" href="#flares.fields.ActiveRegionParameters.GradB_moments">GradB_moments</a></code></li>
+<li><code><a title="flares.fields.ActiveRegionParameters.GradBh_moments" href="#flares.fields.ActiveRegionParameters.GradBh_moments">GradBh_moments</a></code></li>
+<li><code><a title="flares.fields.ActiveRegionParameters.GradBz_moments" href="#flares.fields.ActiveRegionParameters.GradBz_moments">GradBz_moments</a></code></li>
 <li><code><a title="flares.fields.ActiveRegionParameters.J_moments" href="#flares.fields.ActiveRegionParameters.J_moments">J_moments</a></code></li>
 <li><code><a title="flares.fields.ActiveRegionParameters.Jh_moments" href="#flares.fields.ActiveRegionParameters.Jh_moments">Jh_moments</a></code></li>
 <li><code><a title="flares.fields.ActiveRegionParameters.entropy" href="#flares.fields.ActiveRegionParameters.entropy">entropy</a></code></li>
-<li><code><a title="flares.fields.ActiveRegionParameters.fractal_dim" href="#flares.fields.ActiveRegionParameters.fractal_dim">fractal_dim</a></code></li>
 <li><code><a title="flares.fields.ActiveRegionParameters.gamma_moments" href="#flares.fields.ActiveRegionParameters.gamma_moments">gamma_moments</a></code></li>
-<li><code><a title="flares.fields.ActiveRegionParameters.h_moments" href="#flares.fields.ActiveRegionParameters.h_moments">h_moments</a></code></li>
 <li><code><a title="flares.fields.ActiveRegionParameters.hc_moments" href="#flares.fields.ActiveRegionParameters.hc_moments">hc_moments</a></code></li>
 <li><code><a title="flares.fields.ActiveRegionParameters.hctot" href="#flares.fields.ActiveRegionParameters.hctot">hctot</a></code></li>
 <li><code><a title="flares.fields.ActiveRegionParameters.hctotabs" href="#flares.fields.ActiveRegionParameters.hctotabs">hctotabs</a></code></li>
@@ -3166,15 +3229,12 @@ discriminant analysis. <em>The Astrophysical Journal</em> 595(2):1296-1306, 2003
 <li><code><a title="flares.fields.ActiveRegionParameters.itot_polarity" href="#flares.fields.ActiveRegionParameters.itot_polarity">itot_polarity</a></code></li>
 <li><code><a title="flares.fields.ActiveRegionParameters.itotabs" href="#flares.fields.ActiveRegionParameters.itotabs">itotabs</a></code></li>
 <li><code><a title="flares.fields.ActiveRegionParameters.norm" href="#flares.fields.ActiveRegionParameters.norm">norm</a></code></li>
-<li><code><a title="flares.fields.ActiveRegionParameters.phitot" href="#flares.fields.ActiveRegionParameters.phitot">phitot</a></code></li>
-<li><code><a title="flares.fields.ActiveRegionParameters.phitotabs" href="#flares.fields.ActiveRegionParameters.phitotabs">phitotabs</a></code></li>
 <li><code><a title="flares.fields.ActiveRegionParameters.physical_features" href="#flares.fields.ActiveRegionParameters.physical_features">physical_features</a></code></li>
 <li><code><a title="flares.fields.ActiveRegionParameters.register_func" href="#flares.fields.ActiveRegionParameters.register_func">register_func</a></code></li>
 <li><code><a title="flares.fields.ActiveRegionParameters.rho_moments" href="#flares.fields.ActiveRegionParameters.rho_moments">rho_moments</a></code></li>
 <li><code><a title="flares.fields.ActiveRegionParameters.shear_moments" href="#flares.fields.ActiveRegionParameters.shear_moments">shear_moments</a></code></li>
 <li><code><a title="flares.fields.ActiveRegionParameters.totrho" href="#flares.fields.ActiveRegionParameters.totrho">totrho</a></code></li>
 <li><code><a title="flares.fields.ActiveRegionParameters.twist_moments" href="#flares.fields.ActiveRegionParameters.twist_moments">twist_moments</a></code></li>
-<li><code><a title="flares.fields.ActiveRegionParameters.z_moments" href="#flares.fields.ActiveRegionParameters.z_moments">z_moments</a></code></li>
 </ul>
 </li>
 </ul>

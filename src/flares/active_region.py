@@ -24,9 +24,8 @@ import matplotlib.patches as mpatches
 
 
 
-
 class ActiveRegion(ActiveRegionParameters):
-    def __init__(self, hnum: int, date: datetime, root: str, num_features = 0):
+    def __init__(self, hnum: int, date: datetime, root: str, num_features = 0, cmap = "viridis"):
         """An Active Region is an entry point into 
         parameterization, segmentation, and graph methods. 
 
@@ -73,12 +72,15 @@ class ActiveRegion(ActiveRegionParameters):
             root (string): The path to the data. Root must be a directory that holds both root/magnetogram and root/continuum. Inside both
             of these subfolders, there must be a series of folders labeled sharp_{hnum} that contain the sequence of fits files for extraction
         """
+
+        self.cmap = cmap
     
         # Generate xyz components of magnetic field and continuum
         data = get_data(hnum, date, root)
 
         self.Bz, self.Bx, self.By, self.cont = data["Bz"], data["Bx"], data["By"], data["cont"]
         
+        """ TODO
         self.shape = self.Bz.shape
         self.valid = True # Valid is false
 
@@ -86,13 +88,7 @@ class ActiveRegion(ActiveRegionParameters):
             self.valid = False
             warnings.warn(f"Hnum {hnum} date {date} has a nan, skipping")
             return
-
-        # To prevent nan's popping up do to small numbers,
-        # cut everything below minimum val to minimum val
-        minimum_val = 0.001
-        self.Bz[np.abs(self.Bz) < minimum_val] = minimum_val
-        self.Bx[np.abs(self.Bx) < minimum_val] = minimum_val
-        self.By[np.abs(self.By) < minimum_val] = minimum_val
+        """
 
         # Now Bx By Bz are defined so generate the parameter class
         super().__init__(self.Bz, self.By, self.Bx, num_features)
@@ -104,14 +100,19 @@ class ActiveRegion(ActiveRegionParameters):
         self.__nl = None
 
         # The Three data sets
-        self.__sharps, self.__sharps_labels = np.array(data["sharps"].values()), list(data["sharps"].keys())
-        self.__baseline, self.__baseline_labels = None, None
-        self.__segmented, self.__segmented_labels = np.zeros(4 *  self.num_features), ["" for _ in range(4 * self.num_features)]
+        self.__sharps = data["sharps"]
+        self.__baseline = dict()
+        self.__segmented = dict()
         self.__G = nx.Graph()
+        self.__G_labels = None
 
         # GRAPH DATA
         # Graph data is split between masks and feature vectors. Each "mask" is a node that gets its physical features computed on
         self.__node_masks = np.zeros((0, self.shape[0], self.shape[1]), dtype = bool)
+
+
+        # Flags - to check and examine by eye?
+        self.__flags = {"bordered_umbras" : False}
         
 
     def show_graph(self, axs_cont, axs_seg):
@@ -127,15 +128,14 @@ class ActiveRegion(ActiveRegionParameters):
             axs_seg (axis): The segmented axis
         """
         self.assert_masks()
-        cmap = plt.get_cmap('viridis')
 
         color_keys = {"penumbra" : 1.0, "umbra" : 0.5714285714285714, "neutral line" : 0.0}
         values = [color_keys[x[1]["type"]] for x in self.__G.nodes.data()]
         pos = nx.get_node_attributes(self.__G, "pos")
 
         # Plot with the original continuum
-        axs_cont.imshow(self.cont, cmap = cmap)
-        nx.draw(self.__G, pos, axs_cont, node_size = 100, cmap = cmap, node_color = values, with_labels = False, font_color = "white")
+        axs_cont.imshow(self.cont, cmap = self.cmap)
+        nx.draw(self.__G, pos, axs_cont, node_size = 100, cmap = self.cmap, node_color = values, with_labels = False, font_color = "white")
 
         # Plot the one next to it
         mask = np.zeros(self.__umbra.shape)
@@ -143,13 +143,13 @@ class ActiveRegion(ActiveRegionParameters):
         mask[self.__pumbra] = color_keys["penumbra"]
         mask[self.__nl] = color_keys["neutral line"]
         mask[self.__background] = np.nan
-        axs_seg.imshow(mask, cmap = cmap)
-        nx.draw(self.__G, pos, axs_seg, node_size = 100, cmap = cmap, node_color = values, with_labels = False, font_color = "white")
+        axs_seg.imshow(mask, cmap = self.cmap)
+        nx.draw(self.__G, pos, axs_seg, node_size = 100, cmap = self.cmap, node_color = values, with_labels = False, font_color = "white")
 
 
-        l1 = mpatches.Patch(color=cmap(color_keys["penumbra"]), label = "Penumbra")
-        l2 = mpatches.Patch(color=cmap(color_keys["umbra"]), label = "Umbra")
-        l3 = mpatches.Patch(color=cmap(color_keys["neutral line"]), label = "Neutral Line")
+        l1 = mpatches.Patch(color=self.cmap(color_keys["penumbra"]), label = "Penumbra")
+        l2 = mpatches.Patch(color=self.cmap(color_keys["umbra"]), label = "Umbra")
+        l3 = mpatches.Patch(color=self.cmap(color_keys["neutral line"]), label = "Neutral Line")
         axs_seg.legend(handles=[l1, l2, l3])
 
 
@@ -160,18 +160,17 @@ class ActiveRegion(ActiveRegionParameters):
             axs (pyplot.axis): The axis to write the graph to
         """
         self.assert_masks()
-        cmap = plt.get_cmap("viridis")
 
         color_keys = {"penumbra" : 1.0, "umbra" : 0.5714285714285714, "neutral line" : 0.0}
         values = [color_keys.get(x[1]["type"], 0.25) for x in self.__G.nodes.data()]
         pos = nx.get_node_attributes(self.__G, "pos")
         pos = {i : (pos[i][0], -pos[i][1]) for i in pos} # Flip them because of imshow
 
-        nx.draw(self.__G, pos, axs, node_size = 100, cmap = cmap, node_color = values, with_labels = False, font_color = "white")
+        nx.draw(self.__G, pos, axs, node_size = 100, cmap = self.cmap, node_color = values, with_labels = False, font_color = "white")
 
-        l1 = mpatches.Patch(color=cmap(color_keys["penumbra"]), label = "Penumbra")
-        l2 = mpatches.Patch(color=cmap(color_keys["umbra"]), label = "Umbra")
-        l3 = mpatches.Patch(color=cmap(color_keys["neutral line"]), label = "Neutral Line")
+        l1 = mpatches.Patch(color=self.cmap(color_keys["penumbra"]), label = "Penumbra")
+        l2 = mpatches.Patch(color=self.cmap(color_keys["umbra"]), label = "Umbra")
+        l3 = mpatches.Patch(color=self.cmap(color_keys["neutral line"]), label = "Neutral Line")
         axs.legend(handles=[l1, l2, l3])
 
 
@@ -236,7 +235,6 @@ class ActiveRegion(ActiveRegionParameters):
             data, labels
         """
         self.assert_masks()
-        self.__G_labels = self.__baseline_labels # Just a copy of baseline
         return self.__G, self.__G_labels
 
     def get_sharps(self):
@@ -248,7 +246,7 @@ class ActiveRegion(ActiveRegionParameters):
             data, labels
         """
         self.assert_masks()
-        return self.__sharps, self.__sharps_labels
+        return self.__sharps
 
     def get_baseline(self):
         """Get function for baseline
@@ -257,7 +255,9 @@ class ActiveRegion(ActiveRegionParameters):
             numpy array: baseline data set
         """
         self.assert_masks()
-        return self.__baseline, self.__baseline_labels
+        if len(self.__baseline) == 0:
+            self.__baseline = self.physical_features(np.ones(self.shape, dtype = bool), "bas_")
+        return self.__baseline
 
     def get_segmented(self):
         """Get function for segmented
@@ -266,17 +266,15 @@ class ActiveRegion(ActiveRegionParameters):
             numpy array: segmented data set 
         """
         self.assert_masks()
-        return self.__segmented, self.__segmented_labels
+        return self.__segmented
 
     def assert_masks(self):
         """One function that generates all three masks. If all three masks are already
         generated, this function does nothing
         """
-        self.__baseline, self.__baseline_labels = self.physical_features(np.ones(self.shape, dtype = bool), "bas_")
         self.assert_neutral_lines()
         self.assert_umbra_pumbra()
         self.assert_background()
-
     
     def assert_background(self):
         """Generates a background mask. If background is already generated, does nothing
@@ -290,10 +288,7 @@ class ActiveRegion(ActiveRegionParameters):
             background = ~(self.__nl | self.__umbra | self.__pumbra)
 
             # Update dataset
-            data, labels = self.physical_features(background, "bckg_")
-            self.__segmented[3*self.num_features:4*self.num_features] = data
-            self.__segmented_labels[3*self.num_features:4*self.num_features] = labels
-
+            self.__segmented.update(self.physical_features(background, "bckg_"))
             self.__background = background
 
     def assert_neutral_lines(self, radius = 5, thresh = 150):
@@ -317,9 +312,7 @@ class ActiveRegion(ActiveRegionParameters):
             self.__nl = nl_mask.copy()
 
             # Compute the segmented data set
-            data, labels = self.physical_features(nl_mask, "nl_")
-            self.__segmented[0:self.num_features] = data
-            self.__segmented_labels[0:self.num_features] = labels
+            self.__segmented.update(self.physical_features(nl_mask, "nl_"))
 
             ######### GRAPH DATA SET ################
             labeled, labels, sizes = self.__group_pixels(nl_mask)
@@ -332,7 +325,7 @@ class ActiveRegion(ActiveRegionParameters):
 
             for i in labels:
                 mask = labeled == i
-                cur_node = self.__ar_add_node(self.physical_features(mask)[0], cur_node, mask, "neutral line")
+                cur_node = self.__ar_add_node(cur_node, mask, "neutral line")
 
             
             
@@ -411,7 +404,7 @@ class ActiveRegion(ActiveRegionParameters):
 
                     for i in labels:
                         mask = labeled == i
-                        cur_node = self.__ar_add_node(self.physical_features(mask)[0], cur_node, mask, "penumbra")
+                        cur_node = self.__ar_add_node(cur_node, mask, "penumbra")
                         self.__pumbra |= mask
                         self.__umbra &= ~mask
 
@@ -423,21 +416,16 @@ class ActiveRegion(ActiveRegionParameters):
 
                     for i in labels:
                         mask = labeled == i
-                        cur_node = self.__ar_add_node(self.physical_features(mask)[0], cur_node, mask, "umbra")
+                        cur_node = self.__ar_add_node(cur_node, mask, "umbra")
 
                 # ONLY UMBRA
                 else:
                     um = mask & (self.cont <= t)
-                    cur_node = self.__ar_add_node(self.physical_features(mask)[0], cur_node, mask, "umbra")
+                    cur_node = self.__ar_add_node(cur_node, mask, "umbra")
             
             
-            data, labels = self.physical_features(self.__umbra, "um_")
-            self.__segmented[self.num_features:2*self.num_features] = data
-            self.__segmented_labels[self.num_features:2*self.num_features] = labels
-
-            data, labels = self.physical_features(self.__pumbra, "pu_")
-            self.__segmented[2*self.num_features:3*self.num_features] = data
-            self.__segmented_labels[2*self.num_features:3*self.num_features] = labels
+            self.__segmented.update(self.physical_features(self.__umbra, "um_"))
+            self.__segmented.update(self.physical_features(self.__pumbra, "pu_"))
 
 
     def __group_pixels(self, mask):
@@ -494,8 +482,10 @@ class ActiveRegion(ActiveRegionParameters):
             rows, cols = np.where(labeled == labels[i])
             if min(rows) == 0 or min(cols) == 0:
                 bordered.append(i)
+                self.__flags["bordered_umbras"] = True
             if max(cols) == self.shape[1] - 1 or max(rows) == self.shape[0] - 1:
                 bordered.append(i)
+                self.__flags["bordered_umbras"] = True
         return np.delete(labels, bordered), np.delete(sizes, bordered)
 
     def __remove_percentage_max(self, labeled, labels, sizes, p = 0.01):
@@ -535,7 +525,7 @@ class ActiveRegion(ActiveRegionParameters):
         a = np.partition(sizes, -n)[-n]
         return labels[sizes >= a], sizes[sizes >= a]
 
-    def __ar_add_node(self, data, cur_node, mask, type):
+    def __ar_add_node(self, cur_node, mask, type):
         """Adds a node to self graph and connects to all the previous nodes
 
         Args:
@@ -546,6 +536,12 @@ class ActiveRegion(ActiveRegionParameters):
         Returns:
             [type]: [description]
         """
+
+        data = self.physical_features(mask, "graph_")
+        if self.__G_labels is None:
+            self.__G_labels = list(data.keys())
+        data = data.values()
+
         # Get the center of the node for plotting
         x, y = np.where(mask)
         x, y = int(np.mean(x)), int(np.mean(y))
