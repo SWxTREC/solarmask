@@ -14,8 +14,12 @@ def norm(data):
     """
     n = 0
     for i in data:
-        n += np.abs(i)
-    return n
+        n += i*i
+
+    if type(n) == torch.tensor:
+        return torch.sqrt(n)
+    else:
+        return np.sqrt(n)
 
 ###### CONSTANTS
 dev = torch.device("cpu") 
@@ -77,6 +81,7 @@ for x0 in range(radius + 1):
             dist_kern[radius - x0][radius - y0] = v
 
 
+
 def gradient(data):
     """Numerical Gradient of data (my own - not numpy's)
 
@@ -134,59 +139,6 @@ def unpad(Z):
     return Z[np.min(x):np.max(x)+1,np.min(y):np.max(y)+1]
 
 
-def fractal_dimension(Z_):
-    Z = unpad(Z_)
-
-    """Gets the fractal dimension of a 2d binary array
-
-    Args:
-        Z (np.array): a binary array
-
-    Returns:
-        float: fractal dimension
-    """
-
-    # From https://github.com/rougier/numpy-100 (#87)
-    def __boxcount(Z, k):
-        """Counts the number of active boxes for each k x k box - 
-        reducing the array to a rows // k, col // k array
-
-        Args:
-            Z (np.array): The array
-            k (int): The size of the box
-
-        Returns:
-            int: The number of nonzero boxes 
-        """
-        S = np.add.reduceat(
-            np.add.reduceat(Z, np.arange(0, Z.shape[0], k), axis=0),
-                               np.arange(0, Z.shape[1], k), axis=1)
-
-        # We count non-empty (0) and non-full boxes (k*k)
-        return len(np.where((S > 0) & (S < k*k))[0])
-
-
-    # Minimal dimension of image
-    p = min(Z.shape)
-
-    # Greatest power of 2 less than or equal to p
-    n = 2**np.floor(np.log(p)/np.log(2))
-    n = int(np.log(n)/np.log(2))
-
-    # Build successive box sizes (from 2**n down to 2**1)
-    sizes = 2**np.arange(n, 1, -1)
-
-    # Actual box counting with decreasing size
-    counts = []
-    for size in sizes:
-        counts.append(__boxcount(Z, size))
-    counts = np.array(counts, dtype = float)
-    counts[counts == 0] = 0.01
-    sizes[sizes == 0] = 0.01
-
-    # Fit the successive log(sizes) with log (counts)
-    coeffs = np.polyfit(np.log(sizes), np.log(counts), 1)
-    return -coeffs[0]
 
 def shannon_entropy(Z):
     """Computes shannon entropy of a binary array Z

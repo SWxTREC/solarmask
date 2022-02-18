@@ -1,8 +1,10 @@
 from flares.active_region import ActiveRegion
+from flares.data import get_dates
+import numpy as np
 
 
 class ARDataSet:
-    def __init__(self, hnum, date_range, root):
+    def __init__(self, hnum, root, dates = None, verbose = False):
         """Active region range
 
         Args:
@@ -11,14 +13,41 @@ class ARDataSet:
             root ([type]): [description]
         """
 
-        self.segmented = []
-        self.baseline = []
-        self.sharps = []
-        self.graphs = []
+        if dates is None:
+            dates = get_dates(hnum, root, sort = True)
 
-        for date in date_range:
+        self.segmented, self.segmented_labels = [], []
+        self.sharps, self.sharps_labels = [], []
+        self.baseline, self.baseline_labels = [], []
+        self.graphs, self.graphs_labels = [], []
+
+        for date in dates:
+            if verbose:
+                print(f"Working on {hnum}, {date}")
+
             ar = ActiveRegion(hnum, date, root)
-            self.segmented.append(ar.get_segmented()[0])
-            self.baseline.append(ar.get_baseline()[0])
-            self.sharps.append(ar.get_sharps()[0])
-            self.sharps.append(ar.get_graph()[0])
+
+            data = ar.get_segmented()
+            self.segmented.append(list(data.values()))
+            if len(self.segmented_labels) == 0:
+                self.segmented_labels = list(data.keys())
+
+            data = ar.get_baseline()
+            self.baseline.append(list(data.values()))
+            if len(self.baseline_labels) == 0:
+                self.baseline_labels = list(data.keys())
+
+            data = ar.get_sharps()
+            self.sharps.append(list(data.values()))
+            if len(self.sharps_labels) == 0:
+                self.sharps_labels = list(data.keys())
+
+            data = ar.get_graph()
+            self.graphs.append(data[0])
+            if len(self.graphs_labels) == 0:
+                self.graphs_labels = list(data[1])
+
+
+        self.segmented = np.array(self.segmented)
+        self.baseline = np.array(self.segmented)
+        self.sharps = np.array(self.segmented)

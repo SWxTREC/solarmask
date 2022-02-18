@@ -1,6 +1,0 @@
-torch
-scikit-image
-numpy
-networkx
-matplotlib
-astropy
