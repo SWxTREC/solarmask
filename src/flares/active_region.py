@@ -80,7 +80,6 @@ class ActiveRegion(ActiveRegionParameters):
 
         self.Bz, self.Bx, self.By, self.cont = data["Bz"], data["Bx"], data["By"], data["cont"]
         
-        """ TODO
         self.shape = self.Bz.shape
         self.valid = True # Valid is false
 
@@ -88,7 +87,6 @@ class ActiveRegion(ActiveRegionParameters):
             self.valid = False
             warnings.warn(f"Hnum {hnum} date {date} has a nan, skipping")
             return
-        """
 
         # Now Bx By Bz are defined so generate the parameter class
         super().__init__(self.Bz, self.By, self.Bx, num_features)
