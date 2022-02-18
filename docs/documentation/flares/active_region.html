@@ -109,7 +109,6 @@ class ActiveRegion(ActiveRegionParameters):
 
         self.Bz, self.Bx, self.By, self.cont = data[&#34;Bz&#34;], data[&#34;Bx&#34;], data[&#34;By&#34;], data[&#34;cont&#34;]
         
-        &#34;&#34;&#34; TODO
         self.shape = self.Bz.shape
         self.valid = True # Valid is false
 
@@ -117,7 +116,6 @@ class ActiveRegion(ActiveRegionParameters):
             self.valid = False
             warnings.warn(f&#34;Hnum {hnum} date {date} has a nan, skipping&#34;)
             return
-        &#34;&#34;&#34;
 
         # Now Bx By Bz are defined so generate the parameter class
         super().__init__(self.Bz, self.By, self.Bx, num_features)
@@ -738,7 +736,6 @@ could be turned into a ticket and fixed, but for the time being I am ignoring th
 
         self.Bz, self.Bx, self.By, self.cont = data[&#34;Bz&#34;], data[&#34;Bx&#34;], data[&#34;By&#34;], data[&#34;cont&#34;]
         
-        &#34;&#34;&#34; TODO
         self.shape = self.Bz.shape
         self.valid = True # Valid is false
 
@@ -746,7 +743,6 @@ could be turned into a ticket and fixed, but for the time being I am ignoring th
             self.valid = False
             warnings.warn(f&#34;Hnum {hnum} date {date} has a nan, skipping&#34;)
             return
-        &#34;&#34;&#34;
 
         # Now Bx By Bz are defined so generate the parameter class
         super().__init__(self.Bz, self.By, self.Bx, num_features)

@@ -55,6 +55,10 @@ class ARDataSet:
                 print(f&#34;Working on {hnum}, {date}&#34;)
 
             ar = ActiveRegion(hnum, date, root)
+            if not ar.valid:
+                if verbose:
+                    print(f&#34;skipping: {date}&#34;)
+                continue
 
             data = ar.get_segmented()
             self.segmented.append(list(data.values()))
@@ -133,6 +137,10 @@ class ARDataSet:
                 print(f&#34;Working on {hnum}, {date}&#34;)
 
             ar = ActiveRegion(hnum, date, root)
+            if not ar.valid:
+                if verbose:
+                    print(f&#34;skipping: {date}&#34;)
+                continue
 
             data = ar.get_segmented()
             self.segmented.append(list(data.values()))
