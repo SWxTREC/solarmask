@@ -16,13 +16,10 @@ def norm(data):
     for i in data:
         n += i*i
 
-    if type(n) == torch.tensor:
-        return torch.sqrt(n)
-    else:
-        return np.sqrt(n)
+    return np.sqrt(n)
 
 ###### CONSTANTS
-dev = torch.device("cpu") 
+gpu_dev = torch.device("cpu") 
 
 def stat_moment_label(prefix: str):
     """Labels the statistical moment with an added prefix
@@ -60,11 +57,11 @@ def stat_moment(data):
     Returns:
         A pytorch tensor containing average, standard deviation, skew, kurtosis (in that order)
     """
-    avg = torch.mean(data)
-    std = torch.sqrt(torch.mean((data - avg)**2))
-    skw = torch.mean(((data - avg)/std)**3)
-    krt = torch.mean(((data - avg)/std)**4) - 3.0
-    return torch.tensor([avg, std, skw, krt])
+    avg = np.mean(data)
+    std = np.sqrt(np.mean((data - avg)**2))
+    skw = np.mean(((data - avg)/std)**3)
+    krt = np.mean(((data - avg)/std)**4) - 3.0
+    return np.array([avg, std, skw, krt])
 
 
 # The kernel to use greens function (radius 10)
@@ -91,8 +88,11 @@ def gradient(data):
     Returns:
         (np.array, np.array): 2 arrays representing dy, dx respectively
     """
-    retrows = torch.zeros(data.shape, device = dev)
-    retcols = torch.zeros(data.shape, device = dev)
+    return np.gradient(data)
+
+    """
+    retrows = np.zeros(data.shape)
+    retcols = np.zeros(data.shape)
 
     retrows[1:-1,:] = data[2:,:] - data[:-2,:]
 
@@ -104,6 +104,7 @@ def gradient(data):
     retcols[:,-1] = -(-3 * data[:,-1] + 4*data[:,-2] - data[:,-3])
 
     return 0.5 * retrows, 0.5 * retcols
+    """
 
 def cov(m, rowvar=False):
     """Covariance of a dataset m
@@ -122,7 +123,7 @@ def cov(m, rowvar=False):
         m = m.t()
     # m = m.type(torch.double)  # uncomment this line if desired
     fact = 1.0 / (m.size(1) - 1)
-    m -= torch.mean(m, dim=1, keepdim=True)
+    m -= np.mean(m, dim=1, keepdim=True)
     mt = m.t()  # if complex: mt = m.t().conj()
     return fact * m.matmul(mt).squeeze()
 

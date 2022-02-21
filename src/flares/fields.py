@@ -18,7 +18,6 @@ mu0 = 4 * np.pi * 10**-3
 k = 1e3
 M = 1e6
 ds = np.sqrt(1.33e105) * k / M
-C = ds * mu0
 
 
 class ActiveRegionFields:
@@ -69,7 +68,7 @@ class ActiveRegionFields:
         """
         if not hasattr(self, 'gamma'):
             self.assert_Bh()
-            self.gamma = torch.arctan(self.Bz / self.Bh)
+            self.gamma = np.arctan(self.Bz / self.Bh)
     def assert_B(self):
         """Magnitude of magnetic flux vector
 
@@ -127,6 +126,7 @@ class ActiveRegionFields:
             self.assert_grad_Bx()
             self.assert_grad_By()
             self.J = (self.grad_By_x - self.grad_Bx_y) / mu0
+            self.J[self.Bz == 0] = 0
     def assert_Jh(self):
         """Vertical heterogeneity current density
 
@@ -155,7 +155,7 @@ class ActiveRegionFields:
             self.assert_B()
             dot = self.Bx * self.Bpx + self.By * self.Bpy + self.Bz * self.Bpz
             magp = self.norm((self.Bpx, self.Bpy, self.Bpz))
-            self.shear = torch.arccos(dot / (self.B * magp))
+            self.shear = np.arccos(dot / (self.B * magp))
     def assert_rho(self):
         """Excess magnetic energy density
 
@@ -206,19 +206,20 @@ class ActiveRegionFields:
         below the surface
         """
         if not hasattr(self, 'Bpx') or not hasattr(self, 'Bpx') or not hasattr(self, 'Bpz'):
-            # No information off the axis, so just interpolate
-            Bz = F.pad(self.Bz, (radius, radius, radius, radius)).float()
 
-            # phi in the above equation
-            pot = torch.zeros(self.shape, device = dev).float()
+            # Transfer to PyTorch
+            Bz = F.pad(torch.from_numpy(self.Bz), (radius, radius, radius, radius)).float()
+            Bz = Bz.to(gpu_dev)
 
             # Distance kernel - a kernel with values filled in the "circle" (by def of norm) as the distance from
             # the center multiplied by dz (for integration)
 
-            Gn = dist_kern.to(dev)
+            Gn = dist_kern.to(gpu_dev)
 
             # Convolution -- integrate over each pixel
-            pot = F.conv2d(Bz[None, None, ...], Gn[None, None, ...])[0][0]
+            pot = F.conv2d(Bz[None, None, ...], Gn[None, None, ...])[0][0].cpu().numpy()
+
+
 
             # Save potential
             self.potential = pot
@@ -283,9 +284,6 @@ class ActiveRegionParameters(ActiveRegionFields):
             np.array: a 1 dimensional array with all of the physical features computed on the subset provided by mask
         """
 
-        self.__switch_to_gpu()
-        mask = torch.from_numpy(mask).to(dev)
-
         data = dict()
 
         skip = np.count_nonzero(mask) == 0 # Empty
@@ -327,8 +325,6 @@ class ActiveRegionParameters(ActiveRegionFields):
                         print(f"WARNING: {labels_prefix + label} caused nan")
                 data[labels_prefix + label] = value
 
-        mask = mask.detach().cpu().numpy()
-        self.__come_back_from_gpu()
         print("=====================")
         return data
 
@@ -341,7 +337,6 @@ class ActiveRegionParameters(ActiveRegionFields):
         Returns:
             float: Shannon Entropy of mask
         """
-        mask = mask.detach().cpu().numpy() # For sklearn
         return shannon_entropy(mask)
 
 
@@ -375,7 +370,7 @@ class ActiveRegionParameters(ActiveRegionFields):
         Returns:
             parameter label, $\\sum_{\\Phi\\in B_z}|\\Phi|dA$
         """
-        return torch.sum(torch.abs(self.Bz[mask]))
+        return np.sum(np.abs(self.Bz[mask]))
 
     def Bz_totabs(self, mask):
         """Unsigned sum of line of sight flux
@@ -391,7 +386,7 @@ class ActiveRegionParameters(ActiveRegionFields):
         Returns:
             parameter label, $|\\sum_{\\Phi\\in B_z}\\Phi dA|$
         """
-        return torch.abs(torch.sum(self.Bz[mask]))
+        return np.abs(np.sum(self.Bz[mask]))
 
     def Bh_moments(self, mask):
         """Statistical moments of horizontal magnetic field 
@@ -528,7 +523,7 @@ class ActiveRegionParameters(ActiveRegionFields):
             parameter label, $\\sum_{j \\in J_z}|j|dA$
         """
         self.assert_J()
-        return torch.sum(torch.abs(self.J[mask]))
+        return np.sum(np.abs(self.J[mask]))
 
     def itotabs(self, mask):
         """unsigned sum of vertical current
@@ -548,7 +543,7 @@ class ActiveRegionParameters(ActiveRegionFields):
             parameter label, $|\\sum_{j \\in J_z}jdA|$
         """
         self.assert_J()
-        return torch.abs(torch.sum(self.J[mask]))
+        return np.abs(np.sum(self.J[mask]))
 
     def itot_polarity(self, mask):
         """sum of unsigned current regardless of sign of Bz
@@ -568,7 +563,7 @@ class ActiveRegionParameters(ActiveRegionFields):
             parameter label, $|\\sum_{j^+ \\in J_z(B_z > 0)}j^+dA| + |\\sum_{j^- \\in J_z(B_z < 0)}j^-dA|$
         """
         self.assert_J()
-        return torch.abs(torch.sum(self.J[(self.Bz > 0) & mask])) + torch.abs(torch.sum(self.J[(self.Bz < 0) & mask]))
+        return np.abs(np.sum(self.J[(self.Bz > 0) & mask])) + np.abs(np.sum(self.J[(self.Bz < 0) & mask]))
 
     def Jh_moments(self, mask):
         """Statistical moments of Vertical heterogeneity current 
@@ -610,7 +605,7 @@ class ActiveRegionParameters(ActiveRegionFields):
             parameter label, $\\sum_{i\\in J_z^h}|i dA|$
         """
         self.assert_Jh()
-        return torch.sum(torch.abs(self.Jh[mask]))
+        return np.sum(np.abs(self.Jh[mask]))
 
     def ihtotabs(self, mask):
         """Unsigned Sum of vertical heterogeneity current
@@ -631,7 +626,7 @@ class ActiveRegionParameters(ActiveRegionFields):
             parameter label, $|\\sum_{i\\in J_z^h}i dA|$
         """
         self.assert_Jh()
-        return torch.abs(torch.sum(self.Jh[mask]))
+        return np.abs(np.sum(self.Jh[mask]))
 
     def twist_moments(self, mask):
         """Statistical moments of twist
@@ -653,8 +648,12 @@ class ActiveRegionParameters(ActiveRegionFields):
         """
         self.assert_J()
         # Assume J(B = 0) = 0 - so twist is "1"
-        JJ = C * torch.nan_to_num(self.J[mask] / self.Bz[mask], nan = 1.0)
-        JJ[torch.abs(JJ) == float('inf')] = 1.0
+        #JJ = np.nan_to_num(self.J[mask] / self.Bz[mask], nan = 1.0)
+        J = self.J[mask]
+        Bz = self.Bz[mask]
+        
+        JJ = np.divide(J, Bz, out = np.ones_like(J), where=Bz!=0)
+
         return stat_moment(JJ)
 
     def hc_moments(self, mask):
@@ -695,7 +694,7 @@ class ActiveRegionParameters(ActiveRegionFields):
             parameter label, $\\sum_{h \\in h_c}|h|dA$
         """
         self.assert_hc()
-        return torch.sum(torch.abs(self.hc[mask]))
+        return np.sum(np.abs(self.hc[mask]))
 
     def hctotabs(self, mask):
         """Unsigned sum of current helicity
@@ -715,7 +714,7 @@ class ActiveRegionParameters(ActiveRegionFields):
             parameter label, $|\\sum_{h \\in h_c}hdA|$
         """
         self.assert_hc()
-        return torch.abs(torch.sum(self.hc[mask]))
+        return np.abs(np.sum(self.hc[mask]))
 
     def shear_moments(self, mask):
         """Statistical moments of shear angle
@@ -775,24 +774,9 @@ class ActiveRegionParameters(ActiveRegionFields):
             parameter label, $$\\sum_{p\\in p_e)pdA$$
         """
         self.assert_rho()
-        return torch.sum(self.rho[mask])
+        return np.sum(self.rho[mask])
 
 
-    def __switch_to_gpu(self):
-        """Turns all vectors from numpy arrays on the cpu to torch arrays on the gpu
-        """
-        self.Bz = torch.from_numpy(self.Bz).to(dev)
-        self.Bx = torch.from_numpy(self.Bx).to(dev)
-        self.By = torch.from_numpy(self.By).to(dev)
-        self.cont = torch.from_numpy(self.cont).to(dev)
-
-    def __come_back_from_gpu(self):
-        """Turns all vectors from torch arrays on the gpu to numpy arrays on the cpu
-        """
-        self.Bz = self.Bz.detach().cpu().numpy()
-        self.Bx = self.Bx.detach().cpu().numpy()
-        self.By = self.By.detach().cpu().numpy()
-        self.cont = self.cont.detach().cpu().numpy()
 
     def norm(self, data):
         """The one norm of a set of data elements
@@ -801,6 +785,6 @@ class ActiveRegionParameters(ActiveRegionFields):
             data (A list, tuple or iterable): A List of elements that can be taken the absolute value of
 
         Returns:
-            The result of summing the application of torch.abs() on all elements of data
+            The result of summing the application of np.abs() on all elements of data
         """
         return norm(data)

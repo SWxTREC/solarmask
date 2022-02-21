@@ -81,6 +81,7 @@ class ActiveRegion(ActiveRegionParameters):
 
         self.Bz, self.Bx, self.By, self.cont = data["Bz"], data["Bx"], data["By"], data["cont"]
         
+        self.Bz[np.abs(self.Bz) < 0.001] = 0.0
         self.shape = self.Bz.shape
         self.valid = True # Valid is false
 
@@ -287,7 +288,7 @@ class ActiveRegion(ActiveRegionParameters):
         Background is simply $$\\neg (Umbra \\cup Penumbra \\cup Neutral Line)$$
         """
         if self.__background is None:
-            self.__background = torch.zeros(self.shape, dtype=bool)
+            self.__background = np.zeros(self.shape, dtype=bool)
             self.assert_neutral_lines()
             self.assert_umbra_pumbra()
 
