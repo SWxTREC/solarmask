@@ -21,6 +21,7 @@ from skimage.morphology import square
 from skimage.measure import label
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+from matplotlib import cm
 
 
 
@@ -83,7 +84,12 @@ class ActiveRegion(ActiveRegionParameters):
         self.shape = self.Bz.shape
         self.valid = True # Valid is false
 
+
         if np.count_nonzero(np.isnan(self.Bz)) / self.Bz.size > 0.0:
+            x, y = np.argwhere(np.isnan(self.Bz)).T
+            minx, maxx = np.min(x), np.max(x)
+            miny, maxy = np.min(y), np.max(y)
+
             self.valid = False
             warnings.warn(f"Hnum {hnum} date {date} has a nan, skipping")
             return
@@ -127,7 +133,7 @@ class ActiveRegion(ActiveRegionParameters):
         """
         self.assert_masks()
 
-        color_keys = {"penumbra" : 1.0, "umbra" : 0.5714285714285714, "neutral line" : 0.0}
+        color_keys = {"penumbra" : "red", "umbra" : "green", "neutral line" : "blue"}
         values = [color_keys[x[1]["type"]] for x in self.__G.nodes.data()]
         pos = nx.get_node_attributes(self.__G, "pos")
 
@@ -137,17 +143,18 @@ class ActiveRegion(ActiveRegionParameters):
 
         # Plot the one next to it
         mask = np.zeros(self.__umbra.shape)
-        mask[self.__umbra] = color_keys["umbra"]
-        mask[self.__pumbra] = color_keys["penumbra"]
-        mask[self.__nl] = color_keys["neutral line"]
+        mask[self.__umbra] = 1
+        mask[self.__pumbra] = 2
+        mask[self.__nl] = 3
         mask[self.__background] = np.nan
         axs_seg.imshow(mask, cmap = self.cmap)
         nx.draw(self.__G, pos, axs_seg, node_size = 100, cmap = self.cmap, node_color = values, with_labels = False, font_color = "white")
 
 
-        l1 = mpatches.Patch(color=self.cmap(color_keys["penumbra"]), label = "Penumbra")
-        l2 = mpatches.Patch(color=self.cmap(color_keys["umbra"]), label = "Umbra")
-        l3 = mpatches.Patch(color=self.cmap(color_keys["neutral line"]), label = "Neutral Line")
+        cmap = cm.get_cmap(self.cmap)
+        l1 = mpatches.Patch(color=color_keys["penumbra"], label = "Penumbra")
+        l2 = mpatches.Patch(color=color_keys["umbra"], label = "Umbra")
+        l3 = mpatches.Patch(color=color_keys["neutral line"], label = "Neutral Line")
         axs_seg.legend(handles=[l1, l2, l3])
 
 
@@ -159,16 +166,17 @@ class ActiveRegion(ActiveRegionParameters):
         """
         self.assert_masks()
 
-        color_keys = {"penumbra" : 1.0, "umbra" : 0.5714285714285714, "neutral line" : 0.0}
+        color_keys = {"penumbra" : "red", "umbra" : "green", "neutral line" : "blue"}
         values = [color_keys.get(x[1]["type"], 0.25) for x in self.__G.nodes.data()]
         pos = nx.get_node_attributes(self.__G, "pos")
         pos = {i : (pos[i][0], -pos[i][1]) for i in pos} # Flip them because of imshow
 
         nx.draw(self.__G, pos, axs, node_size = 100, cmap = self.cmap, node_color = values, with_labels = False, font_color = "white")
 
-        l1 = mpatches.Patch(color=self.cmap(color_keys["penumbra"]), label = "Penumbra")
-        l2 = mpatches.Patch(color=self.cmap(color_keys["umbra"]), label = "Umbra")
-        l3 = mpatches.Patch(color=self.cmap(color_keys["neutral line"]), label = "Neutral Line")
+        cmap = cm.get_cmap(self.cmap)
+        l1 = mpatches.Patch(color=color_keys["penumbra"], label = "Penumbra")
+        l2 = mpatches.Patch(color=color_keys["umbra"], label = "Umbra")
+        l3 = mpatches.Patch(color=color_keys["neutral line"], label = "Neutral Line")
         axs.legend(handles=[l1, l2, l3])
 
 
@@ -314,7 +322,7 @@ class ActiveRegion(ActiveRegionParameters):
 
             ######### GRAPH DATA SET ################
             labeled, labels, sizes = self.__group_pixels(nl_mask)
-            labels, sizes = self.__remove_small_groups(labeled, labels, sizes, 10)
+            labels, sizes = self.__remove_small_groups(labeled, labels, sizes, 500)
             labels, sizes = self.__remove_percentage_max(labeled, labels, sizes)
             labels, sizes = self.__largest_n_clusters(labels, sizes)
 
@@ -385,7 +393,7 @@ class ActiveRegion(ActiveRegionParameters):
                 mask = labeled_0 == i
                 mx = np.max(self.cont[mask])
                 mn = np.min(self.cont[mask])
-                t = (mx - mn) / 2 + mn
+                t = (mx - mn) / 2
 
                 # PENUMBRA AND UMBRA
                 if mx - mn > 21000:
@@ -394,10 +402,11 @@ class ActiveRegion(ActiveRegionParameters):
                     pu = mask & (self.cont > t)
 
 
+
                     # Further segment the umbra node again
                     labeled, labels, sizes = self.__group_pixels(pu)
-                    labels, sizes = self.__remove_small_groups(labeled, labels, sizes, 10)
-                    labels, sizes = self.__remove_percentage_max(labeled, labels, sizes)
+                    labels, sizes = self.__remove_small_groups(labeled_0, labels, sizes, 3)
+                    labels, sizes = self.__remove_percentage_max(labeled_0, labels, sizes)
                     labels, sizes = self.__largest_n_clusters(labels, sizes)
 
                     for i in labels:
@@ -408,8 +417,8 @@ class ActiveRegion(ActiveRegionParameters):
 
                     # Further segment the umbra node again
                     labeled, labels, sizes = self.__group_pixels(um)
-                    labels, sizes = self.__remove_small_groups(labeled, labels, sizes, 10)
-                    labels, sizes = self.__remove_percentage_max(labeled, labels, sizes)
+                    labels, sizes = self.__remove_small_groups(labeled_0, labels, sizes, 3)
+                    labels, sizes = self.__remove_percentage_max(labeled_0, labels, sizes)
                     labels, sizes = self.__largest_n_clusters(labels, sizes)
 
                     for i in labels:
@@ -543,7 +552,6 @@ class ActiveRegion(ActiveRegionParameters):
         # Get the center of the node for plotting
         x, y = np.where(mask)
         x, y = int(np.mean(x)), int(np.mean(y))
-
         self.__G.add_node(cur_node, v = data, pos = (y,x), type = type)
         #self.__G.add_node(cur_node, v = data, pos = (0,100), type = type)
 

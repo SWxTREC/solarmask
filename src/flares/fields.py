@@ -11,6 +11,8 @@ import torch
 import torch.nn.functional as F
 import numpy as np
 
+import time
+
 
 mu0 = 4 * np.pi * 10**-3
 k = 1e3
@@ -289,6 +291,7 @@ class ActiveRegionParameters(ActiveRegionFields):
         skip = np.count_nonzero(mask) == 0 # Empty
 
         # 1 dimensional features
+        print("=====================")
         for func in self.chosen_funcs:
             name = func.__name__
 
@@ -298,8 +301,10 @@ class ActiveRegionParameters(ActiveRegionFields):
                 if skip:
                     values = [0.0 for _ in labels]
                 else:
+                    start = time.time()
                     values = func(mask)
-
+                    end = time.time()
+                    print(end - start, name)
                 for label, value in zip(labels, values):
                     v = float(value)
                     if np.isnan(v):
@@ -312,7 +317,11 @@ class ActiveRegionParameters(ActiveRegionFields):
                 if skip:
                     value = 0.0
                 else:
+                    start = time.time()
                     value = float(func(mask))
+                    end = time.time()
+                    print(end - start, name)
+
                     v = float(value)
                     if np.isnan(v):
                         print(f"WARNING: {labels_prefix + label} caused nan")
@@ -320,7 +329,7 @@ class ActiveRegionParameters(ActiveRegionFields):
 
         mask = mask.detach().cpu().numpy()
         self.__come_back_from_gpu()
-
+        print("=====================")
         return data
 
     def entropy(self, mask):
