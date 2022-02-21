@@ -4,5 +4,4 @@ import numpy as np
 
 if __name__ == '__main__':
     root = "../docs/example_data/raw"
-    
     ar = ARDataSet(7115, root, verbose = True)
