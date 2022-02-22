@@ -2,17 +2,16 @@ from flares.data import get_dates
 from flares.ARDataSet import ARDataSet
 import numpy as np
 
-if __name__ == '__main__':
-    root = "/srv/data/thli2739"
-    dates = get_dates(7115, root)
-    
 
 
-    ar = ARDataSet(7115, root, dates[0:30], verbose = True)
+root = "/srv/data/thli2739"
+dates = get_dates(7115, root)
 
-    ar.segmented.to_csv("./segmented.csv")
-    ar.baseline.to_csv("./baseline.csv")
-    ar.sharps.to_csv("./sharps.csv")
+ar = ARDataSet(7115, root, dates[0:30], verbose = True)
 
-    for graph in ar.graphs:
-        print(graph)
+ar.segmented.to_csv("./segmented.csv")
+ar.baseline.to_csv("./baseline.csv")
+ar.sharps.to_csv("./sharps.csv")
+
+for graph in ar.graphs:
+    print(graph)

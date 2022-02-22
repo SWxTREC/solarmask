@@ -1,6 +1,7 @@
 import torch
 import numpy as np
 import skimage
+from scipy.stats import kurtosis, skew
 
 
 def norm(data):
@@ -58,9 +59,11 @@ def stat_moment(data):
         A pytorch tensor containing average, standard deviation, skew, kurtosis (in that order)
     """
     avg = np.mean(data)
-    std = np.sqrt(np.mean((data - avg)**2))
-    skw = np.mean(((data - avg)/std)**3)
-    krt = np.mean(((data - avg)/std)**4) - 3.0
+    std = np.std(data)
+    #skw = np.mean(((data - avg)/std)**3)
+    #krt = np.mean(((data - avg)/std)**4) - 3.0
+    krt = kurtosis(data)
+    skw = skew(data)
     return np.array([avg, std, skw, krt])
 
 

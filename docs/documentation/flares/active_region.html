@@ -50,6 +50,7 @@ from skimage.morphology import square
 from skimage.measure import label
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+from matplotlib import cm
 
 
 
@@ -109,10 +110,16 @@ class ActiveRegion(ActiveRegionParameters):
 
         self.Bz, self.Bx, self.By, self.cont = data[&#34;Bz&#34;], data[&#34;Bx&#34;], data[&#34;By&#34;], data[&#34;cont&#34;]
         
+        self.Bz[np.abs(self.Bz) &lt; 0.001] = 0.0
         self.shape = self.Bz.shape
         self.valid = True # Valid is false
 
+
         if np.count_nonzero(np.isnan(self.Bz)) / self.Bz.size &gt; 0.0:
+            x, y = np.argwhere(np.isnan(self.Bz)).T
+            minx, maxx = np.min(x), np.max(x)
+            miny, maxy = np.min(y), np.max(y)
+
             self.valid = False
             warnings.warn(f&#34;Hnum {hnum} date {date} has a nan, skipping&#34;)
             return
@@ -156,7 +163,7 @@ class ActiveRegion(ActiveRegionParameters):
         &#34;&#34;&#34;
         self.assert_masks()
 
-        color_keys = {&#34;penumbra&#34; : 1.0, &#34;umbra&#34; : 0.5714285714285714, &#34;neutral line&#34; : 0.0}
+        color_keys = {&#34;penumbra&#34; : &#34;red&#34;, &#34;umbra&#34; : &#34;green&#34;, &#34;neutral line&#34; : &#34;blue&#34;}
         values = [color_keys[x[1][&#34;type&#34;]] for x in self.__G.nodes.data()]
         pos = nx.get_node_attributes(self.__G, &#34;pos&#34;)
 
@@ -166,17 +173,18 @@ class ActiveRegion(ActiveRegionParameters):
 
         # Plot the one next to it
         mask = np.zeros(self.__umbra.shape)
-        mask[self.__umbra] = color_keys[&#34;umbra&#34;]
-        mask[self.__pumbra] = color_keys[&#34;penumbra&#34;]
-        mask[self.__nl] = color_keys[&#34;neutral line&#34;]
+        mask[self.__umbra] = 1
+        mask[self.__pumbra] = 2
+        mask[self.__nl] = 3
         mask[self.__background] = np.nan
         axs_seg.imshow(mask, cmap = self.cmap)
         nx.draw(self.__G, pos, axs_seg, node_size = 100, cmap = self.cmap, node_color = values, with_labels = False, font_color = &#34;white&#34;)
 
 
-        l1 = mpatches.Patch(color=self.cmap(color_keys[&#34;penumbra&#34;]), label = &#34;Penumbra&#34;)
-        l2 = mpatches.Patch(color=self.cmap(color_keys[&#34;umbra&#34;]), label = &#34;Umbra&#34;)
-        l3 = mpatches.Patch(color=self.cmap(color_keys[&#34;neutral line&#34;]), label = &#34;Neutral Line&#34;)
+        cmap = cm.get_cmap(self.cmap)
+        l1 = mpatches.Patch(color=color_keys[&#34;penumbra&#34;], label = &#34;Penumbra&#34;)
+        l2 = mpatches.Patch(color=color_keys[&#34;umbra&#34;], label = &#34;Umbra&#34;)
+        l3 = mpatches.Patch(color=color_keys[&#34;neutral line&#34;], label = &#34;Neutral Line&#34;)
         axs_seg.legend(handles=[l1, l2, l3])
 
 
@@ -188,16 +196,17 @@ class ActiveRegion(ActiveRegionParameters):
         &#34;&#34;&#34;
         self.assert_masks()
 
-        color_keys = {&#34;penumbra&#34; : 1.0, &#34;umbra&#34; : 0.5714285714285714, &#34;neutral line&#34; : 0.0}
+        color_keys = {&#34;penumbra&#34; : &#34;red&#34;, &#34;umbra&#34; : &#34;green&#34;, &#34;neutral line&#34; : &#34;blue&#34;}
         values = [color_keys.get(x[1][&#34;type&#34;], 0.25) for x in self.__G.nodes.data()]
         pos = nx.get_node_attributes(self.__G, &#34;pos&#34;)
         pos = {i : (pos[i][0], -pos[i][1]) for i in pos} # Flip them because of imshow
 
         nx.draw(self.__G, pos, axs, node_size = 100, cmap = self.cmap, node_color = values, with_labels = False, font_color = &#34;white&#34;)
 
-        l1 = mpatches.Patch(color=self.cmap(color_keys[&#34;penumbra&#34;]), label = &#34;Penumbra&#34;)
-        l2 = mpatches.Patch(color=self.cmap(color_keys[&#34;umbra&#34;]), label = &#34;Umbra&#34;)
-        l3 = mpatches.Patch(color=self.cmap(color_keys[&#34;neutral line&#34;]), label = &#34;Neutral Line&#34;)
+        cmap = cm.get_cmap(self.cmap)
+        l1 = mpatches.Patch(color=color_keys[&#34;penumbra&#34;], label = &#34;Penumbra&#34;)
+        l2 = mpatches.Patch(color=color_keys[&#34;umbra&#34;], label = &#34;Umbra&#34;)
+        l3 = mpatches.Patch(color=color_keys[&#34;neutral line&#34;], label = &#34;Neutral Line&#34;)
         axs.legend(handles=[l1, l2, l3])
 
 
@@ -308,7 +317,7 @@ class ActiveRegion(ActiveRegionParameters):
         Background is simply $$\\neg (Umbra \\cup Penumbra \\cup Neutral Line)$$
         &#34;&#34;&#34;
         if self.__background is None:
-            self.__background = torch.zeros(self.shape, dtype=bool)
+            self.__background = np.zeros(self.shape, dtype=bool)
             self.assert_neutral_lines()
             self.assert_umbra_pumbra()
 
@@ -343,7 +352,7 @@ class ActiveRegion(ActiveRegionParameters):
 
             ######### GRAPH DATA SET ################
             labeled, labels, sizes = self.__group_pixels(nl_mask)
-            labels, sizes = self.__remove_small_groups(labeled, labels, sizes, 10)
+            labels, sizes = self.__remove_small_groups(labeled, labels, sizes, 500)
             labels, sizes = self.__remove_percentage_max(labeled, labels, sizes)
             labels, sizes = self.__largest_n_clusters(labels, sizes)
 
@@ -414,7 +423,7 @@ class ActiveRegion(ActiveRegionParameters):
                 mask = labeled_0 == i
                 mx = np.max(self.cont[mask])
                 mn = np.min(self.cont[mask])
-                t = (mx - mn) / 2 + mn
+                t = (mx - mn) / 2
 
                 # PENUMBRA AND UMBRA
                 if mx - mn &gt; 21000:
@@ -423,10 +432,11 @@ class ActiveRegion(ActiveRegionParameters):
                     pu = mask &amp; (self.cont &gt; t)
 
 
+
                     # Further segment the umbra node again
                     labeled, labels, sizes = self.__group_pixels(pu)
-                    labels, sizes = self.__remove_small_groups(labeled, labels, sizes, 10)
-                    labels, sizes = self.__remove_percentage_max(labeled, labels, sizes)
+                    labels, sizes = self.__remove_small_groups(labeled_0, labels, sizes, 3)
+                    labels, sizes = self.__remove_percentage_max(labeled_0, labels, sizes)
                     labels, sizes = self.__largest_n_clusters(labels, sizes)
 
                     for i in labels:
@@ -437,8 +447,8 @@ class ActiveRegion(ActiveRegionParameters):
 
                     # Further segment the umbra node again
                     labeled, labels, sizes = self.__group_pixels(um)
-                    labels, sizes = self.__remove_small_groups(labeled, labels, sizes, 10)
-                    labels, sizes = self.__remove_percentage_max(labeled, labels, sizes)
+                    labels, sizes = self.__remove_small_groups(labeled_0, labels, sizes, 3)
+                    labels, sizes = self.__remove_percentage_max(labeled_0, labels, sizes)
                     labels, sizes = self.__largest_n_clusters(labels, sizes)
 
                     for i in labels:
@@ -572,7 +582,6 @@ class ActiveRegion(ActiveRegionParameters):
         # Get the center of the node for plotting
         x, y = np.where(mask)
         x, y = int(np.mean(x)), int(np.mean(y))
-
         self.__G.add_node(cur_node, v = data, pos = (y,x), type = type)
         #self.__G.add_node(cur_node, v = data, pos = (0,100), type = type)
 
@@ -736,10 +745,16 @@ could be turned into a ticket and fixed, but for the time being I am ignoring th
 
         self.Bz, self.Bx, self.By, self.cont = data[&#34;Bz&#34;], data[&#34;Bx&#34;], data[&#34;By&#34;], data[&#34;cont&#34;]
         
+        self.Bz[np.abs(self.Bz) &lt; 0.001] = 0.0
         self.shape = self.Bz.shape
         self.valid = True # Valid is false
 
+
         if np.count_nonzero(np.isnan(self.Bz)) / self.Bz.size &gt; 0.0:
+            x, y = np.argwhere(np.isnan(self.Bz)).T
+            minx, maxx = np.min(x), np.max(x)
+            miny, maxy = np.min(y), np.max(y)
+
             self.valid = False
             warnings.warn(f&#34;Hnum {hnum} date {date} has a nan, skipping&#34;)
             return
@@ -783,7 +798,7 @@ could be turned into a ticket and fixed, but for the time being I am ignoring th
         &#34;&#34;&#34;
         self.assert_masks()
 
-        color_keys = {&#34;penumbra&#34; : 1.0, &#34;umbra&#34; : 0.5714285714285714, &#34;neutral line&#34; : 0.0}
+        color_keys = {&#34;penumbra&#34; : &#34;red&#34;, &#34;umbra&#34; : &#34;green&#34;, &#34;neutral line&#34; : &#34;blue&#34;}
         values = [color_keys[x[1][&#34;type&#34;]] for x in self.__G.nodes.data()]
         pos = nx.get_node_attributes(self.__G, &#34;pos&#34;)
 
@@ -793,17 +808,18 @@ could be turned into a ticket and fixed, but for the time being I am ignoring th
 
         # Plot the one next to it
         mask = np.zeros(self.__umbra.shape)
-        mask[self.__umbra] = color_keys[&#34;umbra&#34;]
-        mask[self.__pumbra] = color_keys[&#34;penumbra&#34;]
-        mask[self.__nl] = color_keys[&#34;neutral line&#34;]
+        mask[self.__umbra] = 1
+        mask[self.__pumbra] = 2
+        mask[self.__nl] = 3
         mask[self.__background] = np.nan
         axs_seg.imshow(mask, cmap = self.cmap)
         nx.draw(self.__G, pos, axs_seg, node_size = 100, cmap = self.cmap, node_color = values, with_labels = False, font_color = &#34;white&#34;)
 
 
-        l1 = mpatches.Patch(color=self.cmap(color_keys[&#34;penumbra&#34;]), label = &#34;Penumbra&#34;)
-        l2 = mpatches.Patch(color=self.cmap(color_keys[&#34;umbra&#34;]), label = &#34;Umbra&#34;)
-        l3 = mpatches.Patch(color=self.cmap(color_keys[&#34;neutral line&#34;]), label = &#34;Neutral Line&#34;)
+        cmap = cm.get_cmap(self.cmap)
+        l1 = mpatches.Patch(color=color_keys[&#34;penumbra&#34;], label = &#34;Penumbra&#34;)
+        l2 = mpatches.Patch(color=color_keys[&#34;umbra&#34;], label = &#34;Umbra&#34;)
+        l3 = mpatches.Patch(color=color_keys[&#34;neutral line&#34;], label = &#34;Neutral Line&#34;)
         axs_seg.legend(handles=[l1, l2, l3])
 
 
@@ -815,16 +831,17 @@ could be turned into a ticket and fixed, but for the time being I am ignoring th
         &#34;&#34;&#34;
         self.assert_masks()
 
-        color_keys = {&#34;penumbra&#34; : 1.0, &#34;umbra&#34; : 0.5714285714285714, &#34;neutral line&#34; : 0.0}
+        color_keys = {&#34;penumbra&#34; : &#34;red&#34;, &#34;umbra&#34; : &#34;green&#34;, &#34;neutral line&#34; : &#34;blue&#34;}
         values = [color_keys.get(x[1][&#34;type&#34;], 0.25) for x in self.__G.nodes.data()]
         pos = nx.get_node_attributes(self.__G, &#34;pos&#34;)
         pos = {i : (pos[i][0], -pos[i][1]) for i in pos} # Flip them because of imshow
 
         nx.draw(self.__G, pos, axs, node_size = 100, cmap = self.cmap, node_color = values, with_labels = False, font_color = &#34;white&#34;)
 
-        l1 = mpatches.Patch(color=self.cmap(color_keys[&#34;penumbra&#34;]), label = &#34;Penumbra&#34;)
-        l2 = mpatches.Patch(color=self.cmap(color_keys[&#34;umbra&#34;]), label = &#34;Umbra&#34;)
-        l3 = mpatches.Patch(color=self.cmap(color_keys[&#34;neutral line&#34;]), label = &#34;Neutral Line&#34;)
+        cmap = cm.get_cmap(self.cmap)
+        l1 = mpatches.Patch(color=color_keys[&#34;penumbra&#34;], label = &#34;Penumbra&#34;)
+        l2 = mpatches.Patch(color=color_keys[&#34;umbra&#34;], label = &#34;Umbra&#34;)
+        l3 = mpatches.Patch(color=color_keys[&#34;neutral line&#34;], label = &#34;Neutral Line&#34;)
         axs.legend(handles=[l1, l2, l3])
 
 
@@ -935,7 +952,7 @@ could be turned into a ticket and fixed, but for the time being I am ignoring th
         Background is simply $$\\neg (Umbra \\cup Penumbra \\cup Neutral Line)$$
         &#34;&#34;&#34;
         if self.__background is None:
-            self.__background = torch.zeros(self.shape, dtype=bool)
+            self.__background = np.zeros(self.shape, dtype=bool)
             self.assert_neutral_lines()
             self.assert_umbra_pumbra()
 
@@ -970,7 +987,7 @@ could be turned into a ticket and fixed, but for the time being I am ignoring th
 
             ######### GRAPH DATA SET ################
             labeled, labels, sizes = self.__group_pixels(nl_mask)
-            labels, sizes = self.__remove_small_groups(labeled, labels, sizes, 10)
+            labels, sizes = self.__remove_small_groups(labeled, labels, sizes, 500)
             labels, sizes = self.__remove_percentage_max(labeled, labels, sizes)
             labels, sizes = self.__largest_n_clusters(labels, sizes)
 
@@ -1041,7 +1058,7 @@ could be turned into a ticket and fixed, but for the time being I am ignoring th
                 mask = labeled_0 == i
                 mx = np.max(self.cont[mask])
                 mn = np.min(self.cont[mask])
-                t = (mx - mn) / 2 + mn
+                t = (mx - mn) / 2
 
                 # PENUMBRA AND UMBRA
                 if mx - mn &gt; 21000:
@@ -1050,10 +1067,11 @@ could be turned into a ticket and fixed, but for the time being I am ignoring th
                     pu = mask &amp; (self.cont &gt; t)
 
 
+
                     # Further segment the umbra node again
                     labeled, labels, sizes = self.__group_pixels(pu)
-                    labels, sizes = self.__remove_small_groups(labeled, labels, sizes, 10)
-                    labels, sizes = self.__remove_percentage_max(labeled, labels, sizes)
+                    labels, sizes = self.__remove_small_groups(labeled_0, labels, sizes, 3)
+                    labels, sizes = self.__remove_percentage_max(labeled_0, labels, sizes)
                     labels, sizes = self.__largest_n_clusters(labels, sizes)
 
                     for i in labels:
@@ -1064,8 +1082,8 @@ could be turned into a ticket and fixed, but for the time being I am ignoring th
 
                     # Further segment the umbra node again
                     labeled, labels, sizes = self.__group_pixels(um)
-                    labels, sizes = self.__remove_small_groups(labeled, labels, sizes, 10)
-                    labels, sizes = self.__remove_percentage_max(labeled, labels, sizes)
+                    labels, sizes = self.__remove_small_groups(labeled_0, labels, sizes, 3)
+                    labels, sizes = self.__remove_percentage_max(labeled_0, labels, sizes)
                     labels, sizes = self.__largest_n_clusters(labels, sizes)
 
                     for i in labels:
@@ -1199,7 +1217,6 @@ could be turned into a ticket and fixed, but for the time being I am ignoring th
         # Get the center of the node for plotting
         x, y = np.where(mask)
         x, y = int(np.mean(x)), int(np.mean(y))
-
         self.__G.add_node(cur_node, v = data, pos = (y,x), type = type)
         #self.__G.add_node(cur_node, v = data, pos = (0,100), type = type)
 
@@ -1242,7 +1259,7 @@ Background is simply <span><span class="MathJax_Preview">\neg (Umbra \cup Penumb
     Background is simply $$\\neg (Umbra \\cup Penumbra \\cup Neutral Line)$$
     &#34;&#34;&#34;
     if self.__background is None:
-        self.__background = torch.zeros(self.shape, dtype=bool)
+        self.__background = np.zeros(self.shape, dtype=bool)
         self.assert_neutral_lines()
         self.assert_umbra_pumbra()
 
@@ -1316,7 +1333,7 @@ finds neutral lines using the method described by Schrijver in</p>
 
         ######### GRAPH DATA SET ################
         labeled, labels, sizes = self.__group_pixels(nl_mask)
-        labels, sizes = self.__remove_small_groups(labeled, labels, sizes, 10)
+        labels, sizes = self.__remove_small_groups(labeled, labels, sizes, 500)
         labels, sizes = self.__remove_percentage_max(labeled, labels, sizes)
         labels, sizes = self.__largest_n_clusters(labels, sizes)
 
@@ -1424,7 +1441,7 @@ if the difference between maximum and minimum flux in the mask is greater than 2
             mask = labeled_0 == i
             mx = np.max(self.cont[mask])
             mn = np.min(self.cont[mask])
-            t = (mx - mn) / 2 + mn
+            t = (mx - mn) / 2
 
             # PENUMBRA AND UMBRA
             if mx - mn &gt; 21000:
@@ -1433,10 +1450,11 @@ if the difference between maximum and minimum flux in the mask is greater than 2
                 pu = mask &amp; (self.cont &gt; t)
 
 
+
                 # Further segment the umbra node again
                 labeled, labels, sizes = self.__group_pixels(pu)
-                labels, sizes = self.__remove_small_groups(labeled, labels, sizes, 10)
-                labels, sizes = self.__remove_percentage_max(labeled, labels, sizes)
+                labels, sizes = self.__remove_small_groups(labeled_0, labels, sizes, 3)
+                labels, sizes = self.__remove_percentage_max(labeled_0, labels, sizes)
                 labels, sizes = self.__largest_n_clusters(labels, sizes)
 
                 for i in labels:
@@ -1447,8 +1465,8 @@ if the difference between maximum and minimum flux in the mask is greater than 2
 
                 # Further segment the umbra node again
                 labeled, labels, sizes = self.__group_pixels(um)
-                labels, sizes = self.__remove_small_groups(labeled, labels, sizes, 10)
-                labels, sizes = self.__remove_percentage_max(labeled, labels, sizes)
+                labels, sizes = self.__remove_small_groups(labeled_0, labels, sizes, 3)
+                labels, sizes = self.__remove_percentage_max(labeled_0, labels, sizes)
                 labels, sizes = self.__largest_n_clusters(labels, sizes)
 
                 for i in labels:
@@ -1487,16 +1505,17 @@ if the difference between maximum and minimum flux in the mask is greater than 2
     &#34;&#34;&#34;
     self.assert_masks()
 
-    color_keys = {&#34;penumbra&#34; : 1.0, &#34;umbra&#34; : 0.5714285714285714, &#34;neutral line&#34; : 0.0}
+    color_keys = {&#34;penumbra&#34; : &#34;red&#34;, &#34;umbra&#34; : &#34;green&#34;, &#34;neutral line&#34; : &#34;blue&#34;}
     values = [color_keys.get(x[1][&#34;type&#34;], 0.25) for x in self.__G.nodes.data()]
     pos = nx.get_node_attributes(self.__G, &#34;pos&#34;)
     pos = {i : (pos[i][0], -pos[i][1]) for i in pos} # Flip them because of imshow
 
     nx.draw(self.__G, pos, axs, node_size = 100, cmap = self.cmap, node_color = values, with_labels = False, font_color = &#34;white&#34;)
 
-    l1 = mpatches.Patch(color=self.cmap(color_keys[&#34;penumbra&#34;]), label = &#34;Penumbra&#34;)
-    l2 = mpatches.Patch(color=self.cmap(color_keys[&#34;umbra&#34;]), label = &#34;Umbra&#34;)
-    l3 = mpatches.Patch(color=self.cmap(color_keys[&#34;neutral line&#34;]), label = &#34;Neutral Line&#34;)
+    cmap = cm.get_cmap(self.cmap)
+    l1 = mpatches.Patch(color=color_keys[&#34;penumbra&#34;], label = &#34;Penumbra&#34;)
+    l2 = mpatches.Patch(color=color_keys[&#34;umbra&#34;], label = &#34;Umbra&#34;)
+    l3 = mpatches.Patch(color=color_keys[&#34;neutral line&#34;], label = &#34;Neutral Line&#34;)
     axs.legend(handles=[l1, l2, l3])</code></pre>
 </details>
 </dd>
@@ -1685,7 +1704,7 @@ to be close - there are a few good examples of nodes that work well - see docume
     &#34;&#34;&#34;
     self.assert_masks()
 
-    color_keys = {&#34;penumbra&#34; : 1.0, &#34;umbra&#34; : 0.5714285714285714, &#34;neutral line&#34; : 0.0}
+    color_keys = {&#34;penumbra&#34; : &#34;red&#34;, &#34;umbra&#34; : &#34;green&#34;, &#34;neutral line&#34; : &#34;blue&#34;}
     values = [color_keys[x[1][&#34;type&#34;]] for x in self.__G.nodes.data()]
     pos = nx.get_node_attributes(self.__G, &#34;pos&#34;)
 
@@ -1695,17 +1714,18 @@ to be close - there are a few good examples of nodes that work well - see docume
 
     # Plot the one next to it
     mask = np.zeros(self.__umbra.shape)
-    mask[self.__umbra] = color_keys[&#34;umbra&#34;]
-    mask[self.__pumbra] = color_keys[&#34;penumbra&#34;]
-    mask[self.__nl] = color_keys[&#34;neutral line&#34;]
+    mask[self.__umbra] = 1
+    mask[self.__pumbra] = 2
+    mask[self.__nl] = 3
     mask[self.__background] = np.nan
     axs_seg.imshow(mask, cmap = self.cmap)
     nx.draw(self.__G, pos, axs_seg, node_size = 100, cmap = self.cmap, node_color = values, with_labels = False, font_color = &#34;white&#34;)
 
 
-    l1 = mpatches.Patch(color=self.cmap(color_keys[&#34;penumbra&#34;]), label = &#34;Penumbra&#34;)
-    l2 = mpatches.Patch(color=self.cmap(color_keys[&#34;umbra&#34;]), label = &#34;Umbra&#34;)
-    l3 = mpatches.Patch(color=self.cmap(color_keys[&#34;neutral line&#34;]), label = &#34;Neutral Line&#34;)
+    cmap = cm.get_cmap(self.cmap)
+    l1 = mpatches.Patch(color=color_keys[&#34;penumbra&#34;], label = &#34;Penumbra&#34;)
+    l2 = mpatches.Patch(color=color_keys[&#34;umbra&#34;], label = &#34;Umbra&#34;)
+    l3 = mpatches.Patch(color=color_keys[&#34;neutral line&#34;], label = &#34;Neutral Line&#34;)
     axs_seg.legend(handles=[l1, l2, l3])</code></pre>
 </details>
 </dd>

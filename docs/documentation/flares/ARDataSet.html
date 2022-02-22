@@ -31,10 +31,11 @@
 from flares.data import get_dates
 import numpy as np
 import pandas as pd
-
+import matplotlib.pyplot as plt
+import os
 
 class ARDataSet:
-    def __init__(self, hnum, root, dates = None, verbose = False):
+    def __init__(self, hnum, root, dates = None, verbose = False, frame_dir = None):
         &#34;&#34;&#34;Active region range
 
         Args:
@@ -42,6 +43,9 @@ class ARDataSet:
             date_range ([type]): [description]
             root ([type]): [description]
         &#34;&#34;&#34;
+
+        if frame_dir is not None:
+            fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
 
         if dates is None:
             dates = get_dates(hnum, root, sort = True)
@@ -56,6 +60,8 @@ class ARDataSet:
 
         prev_time = None
         time = None
+        
+        i = 0
 
         for date in dates:
             if verbose:
@@ -67,13 +73,33 @@ class ARDataSet:
                     print(f&#34;skipping: {date}&#34;)
                 continue
 
-            self.segmented = self.segmented.append(ar.get_segmented(), ignore_index = True)
-            self.baseline = self.segmented.append(ar.get_segmented(), ignore_index = True)
-            self.sharps = self.segmented.append(ar.get_segmented(), ignore_index = True)
+    
+            self.segmented = pd.concat([self.segmented, pd.DataFrame(ar.get_segmented(), index=[0])])
+            self.baseline = pd.concat([self.baseline, pd.DataFrame(ar.get_baseline(), index=[0])])
+            self.sharps = pd.concat([self.sharps, pd.DataFrame(ar.get_sharps(), index=[0])])
 
             data = ar.get_graph()
             if not hasattr(self, &#34;graphs_labels&#34;):
-                self.graph_labels = data[1]</code></pre>
+                self.graph_labels = data[1]
+            self.graphs.append(data[0])
+
+
+            if frame_dir is not None:
+
+                ar.show_graph(ax1, ax2)
+                ar.draw_graph(ax3)
+
+                fig.set_figwidth(20)
+
+                fig.set_figwidth(20)
+                ax1.set_title(&#34;Original Continuum&#34;)
+                ax2.set_title(&#34;Segmented Umbras&#34;)
+                ax3.set_title(&#34;Raw Graph&#34;)
+                plt.savefig(os.path.join(frame_dir, str(i) + &#34;.png&#34;))
+                fig.clf()
+                fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
+
+            i+=1</code></pre>
 </details>
 </section>
 <section>
@@ -87,7 +113,7 @@ class ARDataSet:
 <dl>
 <dt id="flares.ARDataSet.ARDataSet"><code class="flex name class">
 <span>class <span class="ident">ARDataSet</span></span>
-<span>(</span><span>hnum, root, dates=None, verbose=False)</span>
+<span>(</span><span>hnum, root, dates=None, verbose=False, frame_dir=None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Active region range</p>
@@ -105,7 +131,7 @@ class ARDataSet:
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">class ARDataSet:
-    def __init__(self, hnum, root, dates = None, verbose = False):
+    def __init__(self, hnum, root, dates = None, verbose = False, frame_dir = None):
         &#34;&#34;&#34;Active region range
 
         Args:
@@ -113,6 +139,9 @@ class ARDataSet:
             date_range ([type]): [description]
             root ([type]): [description]
         &#34;&#34;&#34;
+
+        if frame_dir is not None:
+            fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
 
         if dates is None:
             dates = get_dates(hnum, root, sort = True)
@@ -127,6 +156,8 @@ class ARDataSet:
 
         prev_time = None
         time = None
+        
+        i = 0
 
         for date in dates:
             if verbose:
@@ -138,13 +169,33 @@ class ARDataSet:
                     print(f&#34;skipping: {date}&#34;)
                 continue
 
-            self.segmented = self.segmented.append(ar.get_segmented(), ignore_index = True)
-            self.baseline = self.segmented.append(ar.get_segmented(), ignore_index = True)
-            self.sharps = self.segmented.append(ar.get_segmented(), ignore_index = True)
+    
+            self.segmented = pd.concat([self.segmented, pd.DataFrame(ar.get_segmented(), index=[0])])
+            self.baseline = pd.concat([self.baseline, pd.DataFrame(ar.get_baseline(), index=[0])])
+            self.sharps = pd.concat([self.sharps, pd.DataFrame(ar.get_sharps(), index=[0])])
 
             data = ar.get_graph()
             if not hasattr(self, &#34;graphs_labels&#34;):
-                self.graph_labels = data[1]</code></pre>
+                self.graph_labels = data[1]
+            self.graphs.append(data[0])
+
+
+            if frame_dir is not None:
+
+                ar.show_graph(ax1, ax2)
+                ar.draw_graph(ax3)
+
+                fig.set_figwidth(20)
+
+                fig.set_figwidth(20)
+                ax1.set_title(&#34;Original Continuum&#34;)
+                ax2.set_title(&#34;Segmented Umbras&#34;)
+                ax3.set_title(&#34;Raw Graph&#34;)
+                plt.savefig(os.path.join(frame_dir, str(i) + &#34;.png&#34;))
+                fig.clf()
+                fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
+
+            i+=1</code></pre>
 </details>
 </dd>
 </dl>
