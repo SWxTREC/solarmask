@@ -289,7 +289,6 @@ class ActiveRegionParameters(ActiveRegionFields):
         skip = np.count_nonzero(mask) == 0 # Empty
 
         # 1 dimensional features
-        print("=====================")
         for func in self.chosen_funcs:
             name = func.__name__
 
@@ -302,7 +301,6 @@ class ActiveRegionParameters(ActiveRegionFields):
                     start = time.time()
                     values = func(mask)
                     end = time.time()
-                    print(end - start, name)
                 for label, value in zip(labels, values):
                     v = float(value)
                     if np.isnan(v):
@@ -318,14 +316,12 @@ class ActiveRegionParameters(ActiveRegionFields):
                     start = time.time()
                     value = float(func(mask))
                     end = time.time()
-                    print(end - start, name)
 
                     v = float(value)
                     if np.isnan(v):
                         print(f"WARNING: {labels_prefix + label} caused nan")
                 data[labels_prefix + label] = value
 
-        print("=====================")
         return data
 
     def entropy(self, mask):

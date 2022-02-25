@@ -18,6 +18,9 @@ class ARDataSet:
         if frame_dir is not None:
             fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
 
+        if not os.path.isdir(frame_dir):
+            os.mkdir(frame_dir)
+
         if dates is None:
             dates = get_dates(hnum, root, sort = True)
 
@@ -32,7 +35,7 @@ class ARDataSet:
         prev_time = None
         time = None
         
-        i = 0
+        self.len = 0
 
         for date in dates:
             if verbose:
@@ -45,14 +48,22 @@ class ARDataSet:
                 continue
 
     
-            self.segmented = pd.concat([self.segmented, pd.DataFrame(ar.get_segmented(), index=[0])])
-            self.baseline = pd.concat([self.baseline, pd.DataFrame(ar.get_baseline(), index=[0])])
-            self.sharps = pd.concat([self.sharps, pd.DataFrame(ar.get_sharps(), index=[0])])
+            data = ar.get_segmented()
+            data.update({"date" : date, "hnum" : hnum})
+            self.segmented = pd.concat([self.segmented, pd.DataFrame(data, index=[0])])
+
+            data = ar.get_baseline()
+            data.update({"date" : date, "hnum" : hnum})
+            self.baseline = pd.concat([self.baseline, pd.DataFrame(data, index=[0])])
+
+            data = ar.get_sharps()
+            data.update({"date" : date, "hnum" : hnum})
+            self.sharps = pd.concat([self.sharps, pd.DataFrame(data, index=[0])])
 
             data = ar.get_graph()
-            if not hasattr(self, "graphs_labels"):
-                self.graph_labels = data[1]
-            self.graphs.append(data[0])
+            if not hasattr(self, "graph_labels") or self.graph_labels == None:
+                self.graph_labels = (hnum, data[1])
+            self.graphs.append((date, data[0]))
 
 
             if frame_dir is not None:
@@ -66,8 +77,8 @@ class ARDataSet:
                 ax1.set_title("Original Continuum")
                 ax2.set_title("Segmented Umbras")
                 ax3.set_title("Raw Graph")
-                plt.savefig(os.path.join(frame_dir, str(i) + ".png"))
+                plt.savefig(os.path.join(frame_dir, str(self.len) + ".png"))
                 fig.clf()
                 fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
 
-            i+=1
+            self.len += 1

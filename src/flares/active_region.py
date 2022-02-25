@@ -22,7 +22,7 @@ from skimage.measure import label
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from matplotlib import cm
-
+from scipy import ndimage
 
 
 class ActiveRegion(ActiveRegionParameters):
@@ -546,13 +546,36 @@ class ActiveRegion(ActiveRegionParameters):
         """
 
         data = self.physical_features(mask, "graph_")
+
+        self.assert_B()
+        data["graph_size"] = np.count_nonzero(mask)
+        x, y = np.where(mask)
+        data["graph_x"] = np.mean(x)
+        data["graph_y"] = np.mean(y)
+
+        xcom, ycom = ndimage.measurements.center_of_mass(self.B * mask)
+        data["graph_xcom"] = xcom
+        data["graph_ycom"] = ycom
+
+        c = np.cov((x, y))
+        data["graph_xxcov"] = c[0][0]
+        data["graph_yycov"] = c[1][1]
+        data["graph_xycov"] = c[0][1]
+
+        c = np.cov((x, y), aweights = self.B[mask])
+        data["graph_wxxcov"] = c[0][0]
+        data["graph_wyycov"] = c[1][1]
+        data["graph_wxycov"] = c[0][1]
+
+
         if self.__G_labels is None:
             self.__G_labels = list(data.keys())
-        data = data.values()
+
+
+        data = np.array(list(data.values()))
 
         # Get the center of the node for plotting
-        x, y = np.where(mask)
-        x, y = int(np.mean(x)), int(np.mean(y))
+        x, y = int(xcom), int(ycom)
         self.__G.add_node(cur_node, v = data, pos = (y,x), type = type)
         #self.__G.add_node(cur_node, v = data, pos = (0,100), type = type)
 
