@@ -428,7 +428,7 @@ class ActiveRegion(ActiveRegionParameters):
 
                 # ONLY UMBRA
                 else:
-                    um = mask & (self.cont <= t)
+                    print("HERE")
                     cur_node = self.__ar_add_node(cur_node, mask, "umbra")
             
             
