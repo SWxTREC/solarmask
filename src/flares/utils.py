@@ -4,6 +4,12 @@ import skimage
 from scipy.stats import kurtosis, skew
 
 
+mu0 = 4 * np.pi * 10**-3
+k = 1e3
+M = 1e6
+ds = np.sqrt(1.33e105) * k / M
+
+
 def norm(data):
     """The one norm of a set of data elements
 
