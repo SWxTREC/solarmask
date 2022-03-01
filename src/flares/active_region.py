@@ -5,7 +5,6 @@ from flares.data import *
 import numpy as np
 import networkx as nx
 import warnings
-from node2vec import Node2Vec
 
 
 
