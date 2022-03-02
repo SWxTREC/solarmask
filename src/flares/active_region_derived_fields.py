@@ -203,7 +203,6 @@ class ActiveRegionDerivedFields:
         """
         if self.__grad_Bx_x is None or self.__grad_Bx_y is None:
             self.__grad_Bx_x, self.__grad_Bx_y = gradient(self.Bx)
-            self.__grad_Bx_x = -self.__grad_Bx_x
         return self.__grad_Bx_x
 
     @property
@@ -212,7 +211,6 @@ class ActiveRegionDerivedFields:
         """
         if self.__grad_Bx_x is None or self.__grad_Bx_y is None:
             self.__grad_Bx_x, self.__grad_Bx_y = gradient(self.Bx)
-            self.__grad_Bx_x = -self.__grad_Bx_x
         return self.__grad_Bx_y
 
     @property
@@ -227,7 +225,6 @@ class ActiveRegionDerivedFields:
         """
         if self.__grad_By_x is None or self.__grad_By_y is None:
             self.__grad_By_x, self.__grad_By_y = gradient(self.Bx)
-            self.__grad_By_x = -self.__grad_By_x
         return self.__grad_By_x
 
     @property
@@ -236,7 +233,6 @@ class ActiveRegionDerivedFields:
         """
         if self.__grad_By_x is None or self.__grad_By_y is None:
             self.__grad_By_x, self.__grad_By_y = gradient(self.Bx)
-            self.__grad_By_x = -self.__grad_By_x
         return self.__grad_By_y
 
     @property

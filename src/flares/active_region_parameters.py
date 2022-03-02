@@ -260,4 +260,4 @@ class ActiveRegionParameters(ActiveRegionDerivedFields):
         Returns:
             parameter label, $$\\sum_{p\\in p_e)pdA$$
         """
-        return np.sum(self.rho[mask])
+        return np.sum(self.rho[mask]) / (8 * np.pi)
