@@ -75,7 +75,7 @@ def stat_moment(data):
 
 # The kernel to use greens function (radius 10)
 radius = 10
-dz = 0.0001
+dz = 0.001
 dist_kern = torch.zeros((2*radius + 1, 2*radius + 1))
 for x0 in range(radius + 1):
     for y0 in range(radius + 1):
