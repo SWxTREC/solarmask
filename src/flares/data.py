@@ -37,15 +37,15 @@ def get_dates(harpnum, root, sort = False):
     """
     base = os.path.join(root, "magnetogram", "sharp_" + str(harpnum))
     assert os.path.exists(base)
-    ret = []
+    ret_m = set()
     for i in os.listdir(base):
         if "Br" in i: # Testing for radial coords
             pattern =   re.compile(rf"""hmi\.sharp_cea_720s\.
                         (?P<region>[0-9]+)\.
                         (?P<date>[0-9]+\_[0-9]+)\_TAI\.Br\.fits""", re.VERBOSE)
             match = pattern.match(i)
-            ret.append(datetime.strptime(match.group("date"), "%Y%m%d_%H%M%S"))
-    return sorted(ret) if sort else ret
+            ret_m.add(datetime.strptime(match.group("date"), "%Y%m%d_%H%M%S"))
+    return sorted(ret_m) if sort else ret_m
 
 sharps_features = [ "USFLUX",\
                     "MEANGAM",\
@@ -108,19 +108,22 @@ def get_data(harpnum, date, root):
     files = [("magnetogram", "Br"), ("magnetogram", "Bt"), ("magnetogram", "Bp"), ("continuum", "continuum")]
     data = []
     sharps = {}
+    noaa_ars = None
 
     for f1, f2 in files:
         filename = os.path.join(root, f1, f"sharp_{harpnum}", f"hmi.sharp_cea_720s.{harpnum}.{date_str}_TAI.{f2}.fits")
-        assert os.path.isfile(filename)
+        if not os.path.isfile(filename):
+            return None
         with fits.open(filename) as hdul:
             hdul.verify('fix')
             # Gather sharps info
             if f2 == "Br":
                 for label in sharps_features:
                     sharps[label] = np.float(hdul[1].header[label])
+                noaa_ars = hdul[1].header["NOAA_ARS"]
             
             # Add to array
             data.append(np.array(hdul[1].data))
     
-    ret = {"Bz" : data[0], "By" : data[1], "Bx" : data[2], "cont" : data[3], "sharps" : sharps}
+    ret = {"Bz" : data[0], "By" : data[1], "Bx" : data[2], "cont" : data[3], "sharps" : sharps, "NOAA_ARS" : noaa_ars}
     return ret

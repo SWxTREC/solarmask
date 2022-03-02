@@ -11,6 +11,7 @@ import networkx as nx
 from skimage.filters import threshold_local
 from skimage.morphology import square
 from skimage.measure import label
+import matplotlib.pyplot as plt
 
 
 
@@ -62,9 +63,7 @@ class ActiveRegionSegments(ActiveRegionParameters):
             ######### GRAPH DATA SET ################
             if "graph" in self.data_products:
                 labeled, labels, sizes = self.__group_pixels(nl_mask)
-                labels, sizes = self.__remove_small_groups(labeled, labels, sizes, 500)
-                labels, sizes = self.__remove_percentage_max(labeled, labels, sizes)
-                labels, sizes = self.__largest_n_clusters(labels, sizes)
+                labels, sizes = self.__remove_small_groups(labeled, labels, sizes, 200)
 
                 # Add all the graph nodes
                 for i in labels:
@@ -151,9 +150,7 @@ class ActiveRegionSegments(ActiveRegionParameters):
             self.__umbra = (np.isin(labeled_0, labels))
             
             ###### Filter for graph #######
-            labels, sizes = self.__remove_small_groups(labeled_0, labels, sizes)
-            labels, sizes = self.__remove_percentage_max(labeled_0, labels, sizes)
-            labels, sizes = self.__largest_n_clusters(labels, sizes)
+            labels, sizes = self.__remove_small_groups(labeled_0, labels, sizes, 100)
 
             self.__penumbra = np.zeros(self.shape, dtype = bool)
 
@@ -162,22 +159,25 @@ class ActiveRegionSegments(ActiveRegionParameters):
                 mask = labeled_0 == i
                 mx = np.max(self.cont[mask])
                 mn = np.min(self.cont[mask])
-                t = (mx - mn) / 2
+                t = (mx - mn) / 2 + mn
+                um = mask & (self.cont <= t)
+                pu = mask & (self.cont > t)
+
+                # Small group
+                if np.count_nonzero(um) < 50:
+                    if "graph" in self.data_products:
+                        self.__add_node(mask, "umbra")
 
                 # PENUMBRA AND UMBRA
-                if mx - mn > 21000:
+                elif mx - mn > 21000:
                     # Both umbra and penumbra
-                    um = mask & (self.cont <= t)
-                    pu = mask & (self.cont > t)
                     self.__umbra &= ~pu
                     self.__penumbra |= pu
 
                     if "graph" in self.data_products:
                         # Further segment the umbra node again
                         labeled, labels, sizes = self.__group_pixels(pu)
-                        labels, sizes = self.__remove_small_groups(labeled_0, labels, sizes, 3)
-                        labels, sizes = self.__remove_percentage_max(labeled_0, labels, sizes)
-                        labels, sizes = self.__largest_n_clusters(labels, sizes)
+                        labels, sizes = self.__remove_small_groups(labeled_0, labels, sizes, 100)
 
                         for i in labels:
                             mask = labeled == i
@@ -185,9 +185,7 @@ class ActiveRegionSegments(ActiveRegionParameters):
 
                         # Further segment the umbra node again
                         labeled, labels, sizes = self.__group_pixels(um)
-                        labels, sizes = self.__remove_small_groups(labeled_0, labels, sizes, 3)
-                        labels, sizes = self.__remove_percentage_max(labeled_0, labels, sizes)
-                        labels, sizes = self.__largest_n_clusters(labels, sizes)
+                        labels, sizes = self.__remove_small_groups(labeled_0, labels, sizes, 50)
 
                         for i in labels:
                             mask = labeled == i
@@ -324,6 +322,29 @@ class ActiveRegionSegments(ActiveRegionParameters):
         self.__node_masks.append(mask_dil)
 
 
+    def draw(self, axs):
+        axs[0][0].imshow(self.cont, interpolation = "none")
+        axs[0][1].imshow(self.Bz, interpolation = "none")
+        axs[1][0].imshow(self.umbra_mask, interpolation = "none")
+        axs[1][1].imshow(self.penumbra_mask, interpolation = "none")
+        axs[2][0].imshow(self.nl_mask, interpolation = "none")
+        axs[2][1].imshow(self.background_mask, interpolation = "none")
+
+        color_keys = {"penumbra" : "red", "umbra" : "green", "neutral line" : "blue"}
+        values = [color_keys.get(x[1]["type"]) for x in self._G.nodes.data()]
+        pos = nx.get_node_attributes(self._G, "pos")
+        pos = {i : (pos[i][0], pos[i][1]) for i in pos}
+
+        
+        axs[3][0].imshow(self.cont, interpolation = "none")
+        axs[3][1].imshow(self.Bz, interpolation = "none")
+        nx.draw(self._G, pos, axs[3][0], node_size = 100, node_color = values, with_labels = False)
+        nx.draw(self._G, pos, axs[3][1], node_size = 100, node_color = values, with_labels = False)
+
+        for a in axs:
+            for ax in a:
+                ax.axis(False)
+        
 
     
 
