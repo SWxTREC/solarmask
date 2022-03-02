@@ -61,6 +61,10 @@ class ActiveRegion(ActiveRegionSegments):
 
         # Generate xyz components of magnetic field and continuum
         data = get_data(hnum, date, root)
+        if data is None:
+            self.valid = False
+            warnings.warn(f"Hnum {hnum} date {date} missing continuum, skipping")
+            return
 
         Bz, Bx, By, cont = data["Bz"], data["Bx"], data["By"], data["cont"]
         
@@ -69,9 +73,10 @@ class ActiveRegion(ActiveRegionSegments):
         By[np.abs(By) < 0.001] = 0.0
 
         self.valid = True # Valid is false
-        if np.count_nonzero(np.isnan(Bz)) / Bz.size > 0.0:
+        percent_nan = np.count_nonzero(np.isnan(Bz)) / Bz.size
+        if percent_nan > 0.0:
             self.valid = False
-            warnings.warn(f"Hnum {hnum} date {date} has a nan, skipping")
+            warnings.warn(f"Hnum {hnum} date {date} is {percent_nan*100}% nan, skipping")
             return
 
         # Now Bx By Bz are defined so generate the parameter class
@@ -84,7 +89,7 @@ class ActiveRegion(ActiveRegionSegments):
         self.__graph = None
         self.__G_labels = None
 
-        self.meta = {"hnum" : hnum, "date" : date}
+        self.meta = {"hnum" : hnum, "date" : date, "NOAA_ARS" : data["NOAA_ARS"]}
 
     @property
     def sharps_dataset(self):
@@ -128,8 +133,9 @@ class ActiveRegion(ActiveRegionSegments):
             self.penumbra_mask
 
             for i in range(len(self.node_masks)):
+                print("here")
                 data = self.physical_features(self.node_masks[i], "graph_")
-                labels, v = list(data.keys()), np.array(data.values())
+                labels, v = list(data.keys()), np.array(list(data.values()))
                 nx.set_node_attributes(self._G, {i : v}, "data")
                 if self.__G_labels is None:
                     self.__G_labels = labels

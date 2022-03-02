@@ -2,6 +2,7 @@ from flares.active_region_derived_fields import ActiveRegionDerivedFields
 from flares.utils import *
 import numpy as np
 import warnings
+import time
 
 class ActiveRegionParameters(ActiveRegionDerivedFields):
 
@@ -48,6 +49,7 @@ class ActiveRegionParameters(ActiveRegionDerivedFields):
             if skip:
                 v = 0.0
             else:
+                start = time.time()
                 value = func(mask)
                 v = float(value)
                 if np.isnan(v):
@@ -58,6 +60,7 @@ class ActiveRegionParameters(ActiveRegionDerivedFields):
 
         # Get all the statistical moments
         for name in self.stat_moments:
+            start = time.time()
             field = getattr(self, name)            
             labels = stat_moment_label(name)
             if skip:

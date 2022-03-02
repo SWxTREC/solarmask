@@ -26,7 +26,7 @@ def norm(data):
     return np.sqrt(n)
 
 ###### CONSTANTS
-gpu_dev = torch.device("cuda") 
+gpu_dev = torch.device("cpu")
 
 def stat_moment_label(prefix: str):
     """Labels the statistical moment with an added prefix
