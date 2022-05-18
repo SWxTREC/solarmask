@@ -1,0 +1,1529 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.10.0" />
+<title>solarmask.active_region_derived_fields API documentation</title>
+<meta name="description" content="" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/github.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.7/latest.js?config=TeX-AMS_CHTML" integrity="sha256-kZafAc6mZvK3W3v1pHOcUix30OHQN6pU/NO2oFkqZVw=" crossorigin></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>solarmask.active_region_derived_fields</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">from .utils import *
+from .data import *
+
+import torch
+import torch.nn.functional as F
+import numpy as np
+
+
+class ActiveRegionDerivedFields:
+
+    def __init__(self, Bz, By, Bx):
+        &#34;&#34;&#34;A class to write &#34;derived&#34; fields from x, y, z components of magnetic field (and possibly more)
+        This class is designed so that derrived fields are only computed once, and 
+        operates on an &#34;assertion leve&#34;, so that if a field already exists, nothing 
+        is done
+
+        Args:
+            Bz (2d np.array): The z component magnetic flux
+            By (2d np.array): The y component magnetic flux
+            Bx (2d np.array): The x component magnetic flux
+        &#34;&#34;&#34;
+        assert Bz.shape == By.shape and Bz.shape == Bx.shape
+        self.shape = Bz.shape
+
+        # All of the derived fields (private and set to none at first)
+        self.__Bz = Bz
+        self.__By = By
+        self.__Bx = Bx
+        self.__Bh = None
+        self.__gamma = None
+        self.__B = None
+        self.__grad_B_x = None
+        self.__grad_B_y = None
+        self.__grad_B = None
+        self.__grad_Bh_x = None
+        self.__grad_Bh_y = None
+        self.__grad_Bh = None
+        self.__grad_Bz_x = None
+        self.__grad_Bz_y = None
+        self.__grad_Bz = None
+        self.__grad_Bx_x = None
+        self.__grad_Bx_y = None
+        self.__grad_Bx = None
+        self.__grad_By_x = None
+        self.__grad_By_y = None
+        self.__grad_By = None
+        self.__J = None
+        self.__Jh = None
+        self.__hc = None
+        self.__twist = None
+        self.__shear = None
+        self.__rho = None
+        self.__Bpx = None
+        self.__Bpy = None
+        self.__Bpz = None
+
+    def norm(self, data):
+        &#34;&#34;&#34;The one norm of a set of data elements
+
+        Args:
+            data (A list, tuple or iterable): A List of elements that can be taken the absolute value of
+
+        Returns:
+            The result of summing the application of np.abs() on all elements of data
+        &#34;&#34;&#34;
+        return norm(data)
+
+
+    @property
+    def Bz(self):
+        &#34;&#34;&#34;Line of sight magnetic field
+
+        Returns:
+            np.array: A numpy array representing the line of sight magnetic field
+        &#34;&#34;&#34;
+        return self.__Bz
+
+    @property
+    def Bx(self):
+        &#34;&#34;&#34;Line of sight magnetic field
+
+        Returns:
+            np.array: A numpy array representing the line of sight magnetic field
+        &#34;&#34;&#34;
+        return self.__Bx
+
+    @property
+    def By(self):
+        &#34;&#34;&#34;Line of sight magnetic field
+
+        Returns:
+            np.array: A numpy array representing the line of sight magnetic field
+        &#34;&#34;&#34;
+        return self.__By
+
+    @property
+    def Bh(self):
+        &#34;&#34;&#34;Horizontal Magnetic Field Component
+
+        $$B_h = norm(B_x, B_y)$$
+        &#34;&#34;&#34;
+        if self.__Bh is None: 
+            self.__Bh = self.norm((self.Bx, self.By))
+        return self.__Bh
+
+    @property
+    def gamma(self):
+        &#34;&#34;&#34;Angle of line of magnetic flux vector from the horizontal
+
+        $$\\gamma = arctan(\\frac{B_z}{|B_x| + |B_y|})$$
+        &#34;&#34;&#34;
+        if self.__gamma is None: 
+            self.__gamma = np.arctan(self.Bz / self.Bh)
+        return self.__gamma
+
+    @property
+    def B(self):
+        &#34;&#34;&#34;Magnitude of magnetic flux vector
+
+        $$B = norm(B_x, B_y, B_z)$$
+        &#34;&#34;&#34;
+        if self.__B is None:
+            self.__B = self.norm((self.Bx, self.By, self.Bz))
+        return self.__B
+
+    @property
+    def grad_B_x(self):
+        &#34;&#34;&#34;Gradient of magnetic field magnitude
+
+        $$B = norm(B_x, B_y, B_z)$$
+        &#34;&#34;&#34;
+        if self.__grad_B_x is None or self.__grad_B_y is None:
+            self.__grad_B_x, self.__grad_B_y = gradient(self.B)
+        return self.__grad_B_x
+
+    @property
+    def grad_B_y(self):
+        &#34;&#34;&#34;Gradient of magnetic field magnitude
+
+        $$B = norm(B_x, B_y, B_z)$$
+        &#34;&#34;&#34;
+        if self.__grad_B_x is None or self.__grad_B_y is None:
+            self.__grad_B_x, self.__grad_B_y = gradient(self.B)
+        return self.__grad_B_y
+
+    @property
+    def grad_B(self):
+        if self.__grad_B is None:
+            self.__grad_B = self.norm((self.grad_B_x, self.grad_B_y))
+        return self.__grad_B
+
+    @property
+    def grad_Bh_x(self):
+        &#34;&#34;&#34;Gradient of horizontal magnetic field
+
+        $$B_h = norm(B_x, B_y)$$
+        &#34;&#34;&#34;
+        if self.__grad_Bh_x is None or self.__grad_Bh_y is None:
+            self.__grad_Bh_x, self.__grad_Bh_y = gradient(self.Bh)
+        return self.__grad_Bh_x
+
+    @property
+    def grad_Bh_y(self):
+        &#34;&#34;&#34;Gradient of horizontal magnetic field
+
+        $$B_h = norm(B_x, B_y)$$
+        &#34;&#34;&#34;
+        if self.__grad_Bh_x is None or self.__grad_Bh_y is None:
+            self.__grad_Bh_x, self.__grad_Bh_y = gradient(self.Bh)
+        return self.__grad_Bh_y
+
+    @property
+    def grad_Bh(self):
+        if self.__grad_Bh is None:
+            self.__grad_Bh = self.norm((self.grad_Bh_x, self.grad_Bh_y))
+        return self.__grad_Bh
+
+    @property
+    def grad_Bz_x(self):
+        &#34;&#34;&#34;Gradient of line of site magnetic field
+        &#34;&#34;&#34;
+        if self.__grad_Bz_x is None or self.__grad_Bz_y is None:
+            self.__grad_Bz_x, self.__grad_Bz_y = gradient(self.Bz)
+        return self.__grad_Bz_x
+
+    @property
+    def grad_Bz_y(self):
+        &#34;&#34;&#34;Gradient of line of site magnetic field
+        &#34;&#34;&#34;
+        if self.__grad_Bz_x is None or self.__grad_Bz_y is None:
+            self.__grad_Bz_x, self.__grad_Bz_y = gradient(self.Bz)
+        return self.__grad_Bz_y
+
+    @property
+    def grad_Bz(self):
+        if self.__grad_Bz is None:
+            self.__grad_Bz = self.norm((self.grad_Bz_x, self.grad_Bz_y))
+        return self.__grad_Bz
+
+    @property
+    def grad_Bx_x(self):
+        &#34;&#34;&#34;Gradient of line of x component of magnetic field
+        &#34;&#34;&#34;
+        if self.__grad_Bx_x is None or self.__grad_Bx_y is None:
+            self.__grad_Bx_x, self.__grad_Bx_y = gradient(self.Bx)
+        return self.__grad_Bx_x
+
+    @property
+    def grad_Bx_y(self):
+        &#34;&#34;&#34;Gradient of line of x component of magnetic field
+        &#34;&#34;&#34;
+        if self.__grad_Bx_x is None or self.__grad_Bx_y is None:
+            self.__grad_Bx_x, self.__grad_Bx_y = gradient(self.Bx)
+        return self.__grad_Bx_y
+
+    @property
+    def grad_Bx(self):
+        if self.__grad_Bx is None:
+            self.__grad_Bx = self.norm((self.grad_Bx_x, self.grad_Bx_y))
+        return self.__grad_Bx
+
+    @property
+    def grad_By_x(self):
+        &#34;&#34;&#34;Gradient of line of x component of magnetic field
+        &#34;&#34;&#34;
+        if self.__grad_By_x is None or self.__grad_By_y is None:
+            self.__grad_By_x, self.__grad_By_y = gradient(self.Bx)
+        return self.__grad_By_x
+
+    @property
+    def grad_By_y(self):
+        &#34;&#34;&#34;Gradient of line of x component of magnetic field
+        &#34;&#34;&#34;
+        if self.__grad_By_x is None or self.__grad_By_y is None:
+            self.__grad_By_x, self.__grad_By_y = gradient(self.Bx)
+        return self.__grad_By_y
+
+    @property
+    def grad_By(self):
+        if self.__grad_By is None:
+            self.__grad_By = self.norm((self.grad_By_x, self.grad_By_y))
+        return self.__grad_By
+
+    @property
+    def J(self):
+        &#34;&#34;&#34;Vertical current density
+
+        $$J_z = \\frac{\\partial B_y}{\\partial x} - \\frac{\\partial B_x}{\\partial y}$$
+        &#34;&#34;&#34;
+        if self.__J is None:
+            self.__J = (self.grad_By_x - self.grad_Bx_y) / mu0
+            self.__J[self.Bz == 0] = 0
+        return self.__J
+
+    @property
+    def Jh(self):
+        &#34;&#34;&#34;Vertical heterogeneity current density
+
+        $$J_z^h = \\frac{1}{B}(B_y\\frac{\\partial B_x}{\\partial y} - B_x \\frac{\\partial B_y}{\\partial x})$$
+        &#34;&#34;&#34;
+        if self.__Jh is None:
+            self.__Jh = (self.By * self.grad_Bx_y - self.Bx * self.grad_By_x) / mu0
+        return self.__Jh
+
+    @property
+    def hc(self):
+        &#34;&#34;&#34;Current helicity
+
+        $$h_c = B_z(\\frac{\\partial B_y}{\\partial x} - \\frac{\\partial B_x}{\\partial y})$$
+        &#34;&#34;&#34;
+        if self.__hc is None:
+            self.__hc = self.Bz * self.J
+        return self.__hc
+
+    @property
+    def twist(self):
+        &#34;&#34;&#34;Twist
+        &#34;&#34;&#34;
+        if self.__twist is None:
+            self.__twist = np.divide(self.J, self.Bz, out = np.ones_like(self.J), where=self.Bz != 0)
+        return self.__twist
+
+    @property
+    def shear(self):
+        &#34;&#34;&#34;Shear angle
+
+        $$\\Psi = arccos(\\frac{\\vec{B_p}\\cdot\\vec{B_o}}{|B_o||B_p|})$$
+        &#34;&#34;&#34;
+        if self.__shear is None:
+            dot = self.Bx * self.Bpx + self.By * self.Bpy + self.Bz * self.Bpz
+            magp = self.norm((self.Bpx, self.Bpy, self.Bpz))
+            self.__shear = np.arccos(dot / (self.B * magp))
+        return self.__shear
+
+    @property
+    def rho(self):
+        &#34;&#34;&#34;Excess magnetic energy density
+
+        $$\\rho_e = norm(B_p - B_o)$$
+        &#34;&#34;&#34;
+        if self.__rho is None:
+            self.__rho = (self.B - self.norm((self.Bpx, self.Bpy, self.Bpz)))**2 / (8*np.pi)
+        return self.__rho
+
+    @property
+    def Bpx(self):
+        if self.__Bpx is None:
+            self.greenpot()
+        return self.__Bpx
+
+    @property
+    def Bpy(self):
+        if self.__Bpy is None:
+            self.greenpot()
+        return self.__Bpy
+
+    @property
+    def Bpz(self):
+        if self.__Bpz is None:
+            self.__Bpz = self.__Bz
+        return self.__Bpz
+
+    def greenpot(self):
+        &#34;&#34;&#34;Magnetic field vector assuming zero current
+
+        $$B = -\\nabla \\phi \\quad \\nabla^2 \\phi= 0 \\quad (z &gt; 0)$$
+        $$-\\hat{n}\\cdot\\nabla\\phi = B_n \\quad (z = 0)$$
+        $$\\phi(r) \\rightarrow 0 \\quad as \\quad r \\rightarrow \\infty \\quad (z = 0)$$
+
+        Use green&#39;s function for the neumann boundary condition
+        $$\\nabla^2 G_n(r, r&#39;) = 0 \\quad (z &gt; 0)$$
+        $$G_n \\rightarrow 0 \\quad as \\quad |r - r&#39;| \\rightarrow \\infty \\quad (z &gt; 0)$$
+        $$-\\hat{n}\\cdot\\nabla G_n = 0 \\quad (z = 0, r&#39; \\neq r)$$
+
+        $$-\\hat{n}\\cdot\\nabla G_n$$ 
+        
+        diverges to keep unit flux
+
+        $$lim_{z \\rightarrow 0^+}\\int\\hat{n}\\cdot\\nabla G_n(r,r&#39;)dS = 1$$
+        
+        We have the solution:
+
+        $$\\phi(r) = \\int B_n(r&#39;)G_n(r, r&#39;)dS&#39; \\quad dS&#39; = dx&#39;dy&#39; \\quad r&#39; = (x&#39;, y&#39;, 0)$$
+
+        Explicit form:
+        $$G_n(r, r&#39;) = \\frac{1}{2\\phi R} \\quad (R = |r - r&#39;|)$$
+        
+        Discrete form:
+        $$\\phi(r) \\rightarrow \\sum_{r&#39;_{ij}}B_n(r&#39;)\\tilde{G}_n(r, r&#39;_{ij})\\Delta^2$$
+        
+        and $$B_n$$ is approximated by:
+
+        $$B_n(r) \\rightarrow -\\sum_{r&#39;_{ij}}\\hat{n}\\cdot\\nabla \\tilde{G}_n(r, r&#39;_{ij})\\Delta^2 \\quad (r = (x, y, 0))$$
+        
+        $$\\tilde{G}_n(r, r&#39;_{ij}) = \\frac{1}{2\\pi |r - r&#39;_{ij} + (\\Delta/\\sqrt{2\\pi}\\hat{n})|}$$
+
+        As if there is a magnetic pole located just 
+        
+        $$\\Delta/\\sqrt{2\\pi}$$ 
+        
+        below the surface
+        &#34;&#34;&#34;
+        # Transfer to PyTorch
+        Bz = F.pad(torch.from_numpy(self.Bz), (radius, radius, radius, radius)).float()
+        Bz = Bz.to(gpu_dev)
+
+        # Distance kernel - a kernel with values filled in the &#34;circle&#34; (by def of norm) as the distance from
+        # the center multiplied by dz (for integration)
+
+        Gn = dist_kern.to(gpu_dev)
+
+        # Convolution -- integrate over each pixel
+        pot = F.conv2d(Bz[None, None, ...], Gn[None, None, ...])[0][0].cpu().numpy()
+
+        # Save potential
+        self.__potential = pot
+
+        # Get Potential Fields
+        grad = gradient(self.__potential)
+        self.__Bpx, self.__Bpy = -grad[0], -grad[1]</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="solarmask.active_region_derived_fields.ActiveRegionDerivedFields"><code class="flex name class">
+<span>class <span class="ident">ActiveRegionDerivedFields</span></span>
+<span>(</span><span>Bz, By, Bx)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>A class to write "derived" fields from x, y, z components of magnetic field (and possibly more)
+This class is designed so that derrived fields are only computed once, and
+operates on an "assertion leve", so that if a field already exists, nothing
+is done</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>Bz</code></strong> :&ensp;<code>2d np.array</code></dt>
+<dd>The z component magnetic flux</dd>
+<dt><strong><code>By</code></strong> :&ensp;<code>2d np.array</code></dt>
+<dd>The y component magnetic flux</dd>
+<dt><strong><code>Bx</code></strong> :&ensp;<code>2d np.array</code></dt>
+<dd>The x component magnetic flux</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class ActiveRegionDerivedFields:
+
+    def __init__(self, Bz, By, Bx):
+        &#34;&#34;&#34;A class to write &#34;derived&#34; fields from x, y, z components of magnetic field (and possibly more)
+        This class is designed so that derrived fields are only computed once, and 
+        operates on an &#34;assertion leve&#34;, so that if a field already exists, nothing 
+        is done
+
+        Args:
+            Bz (2d np.array): The z component magnetic flux
+            By (2d np.array): The y component magnetic flux
+            Bx (2d np.array): The x component magnetic flux
+        &#34;&#34;&#34;
+        assert Bz.shape == By.shape and Bz.shape == Bx.shape
+        self.shape = Bz.shape
+
+        # All of the derived fields (private and set to none at first)
+        self.__Bz = Bz
+        self.__By = By
+        self.__Bx = Bx
+        self.__Bh = None
+        self.__gamma = None
+        self.__B = None
+        self.__grad_B_x = None
+        self.__grad_B_y = None
+        self.__grad_B = None
+        self.__grad_Bh_x = None
+        self.__grad_Bh_y = None
+        self.__grad_Bh = None
+        self.__grad_Bz_x = None
+        self.__grad_Bz_y = None
+        self.__grad_Bz = None
+        self.__grad_Bx_x = None
+        self.__grad_Bx_y = None
+        self.__grad_Bx = None
+        self.__grad_By_x = None
+        self.__grad_By_y = None
+        self.__grad_By = None
+        self.__J = None
+        self.__Jh = None
+        self.__hc = None
+        self.__twist = None
+        self.__shear = None
+        self.__rho = None
+        self.__Bpx = None
+        self.__Bpy = None
+        self.__Bpz = None
+
+    def norm(self, data):
+        &#34;&#34;&#34;The one norm of a set of data elements
+
+        Args:
+            data (A list, tuple or iterable): A List of elements that can be taken the absolute value of
+
+        Returns:
+            The result of summing the application of np.abs() on all elements of data
+        &#34;&#34;&#34;
+        return norm(data)
+
+
+    @property
+    def Bz(self):
+        &#34;&#34;&#34;Line of sight magnetic field
+
+        Returns:
+            np.array: A numpy array representing the line of sight magnetic field
+        &#34;&#34;&#34;
+        return self.__Bz
+
+    @property
+    def Bx(self):
+        &#34;&#34;&#34;Line of sight magnetic field
+
+        Returns:
+            np.array: A numpy array representing the line of sight magnetic field
+        &#34;&#34;&#34;
+        return self.__Bx
+
+    @property
+    def By(self):
+        &#34;&#34;&#34;Line of sight magnetic field
+
+        Returns:
+            np.array: A numpy array representing the line of sight magnetic field
+        &#34;&#34;&#34;
+        return self.__By
+
+    @property
+    def Bh(self):
+        &#34;&#34;&#34;Horizontal Magnetic Field Component
+
+        $$B_h = norm(B_x, B_y)$$
+        &#34;&#34;&#34;
+        if self.__Bh is None: 
+            self.__Bh = self.norm((self.Bx, self.By))
+        return self.__Bh
+
+    @property
+    def gamma(self):
+        &#34;&#34;&#34;Angle of line of magnetic flux vector from the horizontal
+
+        $$\\gamma = arctan(\\frac{B_z}{|B_x| + |B_y|})$$
+        &#34;&#34;&#34;
+        if self.__gamma is None: 
+            self.__gamma = np.arctan(self.Bz / self.Bh)
+        return self.__gamma
+
+    @property
+    def B(self):
+        &#34;&#34;&#34;Magnitude of magnetic flux vector
+
+        $$B = norm(B_x, B_y, B_z)$$
+        &#34;&#34;&#34;
+        if self.__B is None:
+            self.__B = self.norm((self.Bx, self.By, self.Bz))
+        return self.__B
+
+    @property
+    def grad_B_x(self):
+        &#34;&#34;&#34;Gradient of magnetic field magnitude
+
+        $$B = norm(B_x, B_y, B_z)$$
+        &#34;&#34;&#34;
+        if self.__grad_B_x is None or self.__grad_B_y is None:
+            self.__grad_B_x, self.__grad_B_y = gradient(self.B)
+        return self.__grad_B_x
+
+    @property
+    def grad_B_y(self):
+        &#34;&#34;&#34;Gradient of magnetic field magnitude
+
+        $$B = norm(B_x, B_y, B_z)$$
+        &#34;&#34;&#34;
+        if self.__grad_B_x is None or self.__grad_B_y is None:
+            self.__grad_B_x, self.__grad_B_y = gradient(self.B)
+        return self.__grad_B_y
+
+    @property
+    def grad_B(self):
+        if self.__grad_B is None:
+            self.__grad_B = self.norm((self.grad_B_x, self.grad_B_y))
+        return self.__grad_B
+
+    @property
+    def grad_Bh_x(self):
+        &#34;&#34;&#34;Gradient of horizontal magnetic field
+
+        $$B_h = norm(B_x, B_y)$$
+        &#34;&#34;&#34;
+        if self.__grad_Bh_x is None or self.__grad_Bh_y is None:
+            self.__grad_Bh_x, self.__grad_Bh_y = gradient(self.Bh)
+        return self.__grad_Bh_x
+
+    @property
+    def grad_Bh_y(self):
+        &#34;&#34;&#34;Gradient of horizontal magnetic field
+
+        $$B_h = norm(B_x, B_y)$$
+        &#34;&#34;&#34;
+        if self.__grad_Bh_x is None or self.__grad_Bh_y is None:
+            self.__grad_Bh_x, self.__grad_Bh_y = gradient(self.Bh)
+        return self.__grad_Bh_y
+
+    @property
+    def grad_Bh(self):
+        if self.__grad_Bh is None:
+            self.__grad_Bh = self.norm((self.grad_Bh_x, self.grad_Bh_y))
+        return self.__grad_Bh
+
+    @property
+    def grad_Bz_x(self):
+        &#34;&#34;&#34;Gradient of line of site magnetic field
+        &#34;&#34;&#34;
+        if self.__grad_Bz_x is None or self.__grad_Bz_y is None:
+            self.__grad_Bz_x, self.__grad_Bz_y = gradient(self.Bz)
+        return self.__grad_Bz_x
+
+    @property
+    def grad_Bz_y(self):
+        &#34;&#34;&#34;Gradient of line of site magnetic field
+        &#34;&#34;&#34;
+        if self.__grad_Bz_x is None or self.__grad_Bz_y is None:
+            self.__grad_Bz_x, self.__grad_Bz_y = gradient(self.Bz)
+        return self.__grad_Bz_y
+
+    @property
+    def grad_Bz(self):
+        if self.__grad_Bz is None:
+            self.__grad_Bz = self.norm((self.grad_Bz_x, self.grad_Bz_y))
+        return self.__grad_Bz
+
+    @property
+    def grad_Bx_x(self):
+        &#34;&#34;&#34;Gradient of line of x component of magnetic field
+        &#34;&#34;&#34;
+        if self.__grad_Bx_x is None or self.__grad_Bx_y is None:
+            self.__grad_Bx_x, self.__grad_Bx_y = gradient(self.Bx)
+        return self.__grad_Bx_x
+
+    @property
+    def grad_Bx_y(self):
+        &#34;&#34;&#34;Gradient of line of x component of magnetic field
+        &#34;&#34;&#34;
+        if self.__grad_Bx_x is None or self.__grad_Bx_y is None:
+            self.__grad_Bx_x, self.__grad_Bx_y = gradient(self.Bx)
+        return self.__grad_Bx_y
+
+    @property
+    def grad_Bx(self):
+        if self.__grad_Bx is None:
+            self.__grad_Bx = self.norm((self.grad_Bx_x, self.grad_Bx_y))
+        return self.__grad_Bx
+
+    @property
+    def grad_By_x(self):
+        &#34;&#34;&#34;Gradient of line of x component of magnetic field
+        &#34;&#34;&#34;
+        if self.__grad_By_x is None or self.__grad_By_y is None:
+            self.__grad_By_x, self.__grad_By_y = gradient(self.Bx)
+        return self.__grad_By_x
+
+    @property
+    def grad_By_y(self):
+        &#34;&#34;&#34;Gradient of line of x component of magnetic field
+        &#34;&#34;&#34;
+        if self.__grad_By_x is None or self.__grad_By_y is None:
+            self.__grad_By_x, self.__grad_By_y = gradient(self.Bx)
+        return self.__grad_By_y
+
+    @property
+    def grad_By(self):
+        if self.__grad_By is None:
+            self.__grad_By = self.norm((self.grad_By_x, self.grad_By_y))
+        return self.__grad_By
+
+    @property
+    def J(self):
+        &#34;&#34;&#34;Vertical current density
+
+        $$J_z = \\frac{\\partial B_y}{\\partial x} - \\frac{\\partial B_x}{\\partial y}$$
+        &#34;&#34;&#34;
+        if self.__J is None:
+            self.__J = (self.grad_By_x - self.grad_Bx_y) / mu0
+            self.__J[self.Bz == 0] = 0
+        return self.__J
+
+    @property
+    def Jh(self):
+        &#34;&#34;&#34;Vertical heterogeneity current density
+
+        $$J_z^h = \\frac{1}{B}(B_y\\frac{\\partial B_x}{\\partial y} - B_x \\frac{\\partial B_y}{\\partial x})$$
+        &#34;&#34;&#34;
+        if self.__Jh is None:
+            self.__Jh = (self.By * self.grad_Bx_y - self.Bx * self.grad_By_x) / mu0
+        return self.__Jh
+
+    @property
+    def hc(self):
+        &#34;&#34;&#34;Current helicity
+
+        $$h_c = B_z(\\frac{\\partial B_y}{\\partial x} - \\frac{\\partial B_x}{\\partial y})$$
+        &#34;&#34;&#34;
+        if self.__hc is None:
+            self.__hc = self.Bz * self.J
+        return self.__hc
+
+    @property
+    def twist(self):
+        &#34;&#34;&#34;Twist
+        &#34;&#34;&#34;
+        if self.__twist is None:
+            self.__twist = np.divide(self.J, self.Bz, out = np.ones_like(self.J), where=self.Bz != 0)
+        return self.__twist
+
+    @property
+    def shear(self):
+        &#34;&#34;&#34;Shear angle
+
+        $$\\Psi = arccos(\\frac{\\vec{B_p}\\cdot\\vec{B_o}}{|B_o||B_p|})$$
+        &#34;&#34;&#34;
+        if self.__shear is None:
+            dot = self.Bx * self.Bpx + self.By * self.Bpy + self.Bz * self.Bpz
+            magp = self.norm((self.Bpx, self.Bpy, self.Bpz))
+            self.__shear = np.arccos(dot / (self.B * magp))
+        return self.__shear
+
+    @property
+    def rho(self):
+        &#34;&#34;&#34;Excess magnetic energy density
+
+        $$\\rho_e = norm(B_p - B_o)$$
+        &#34;&#34;&#34;
+        if self.__rho is None:
+            self.__rho = (self.B - self.norm((self.Bpx, self.Bpy, self.Bpz)))**2 / (8*np.pi)
+        return self.__rho
+
+    @property
+    def Bpx(self):
+        if self.__Bpx is None:
+            self.greenpot()
+        return self.__Bpx
+
+    @property
+    def Bpy(self):
+        if self.__Bpy is None:
+            self.greenpot()
+        return self.__Bpy
+
+    @property
+    def Bpz(self):
+        if self.__Bpz is None:
+            self.__Bpz = self.__Bz
+        return self.__Bpz
+
+    def greenpot(self):
+        &#34;&#34;&#34;Magnetic field vector assuming zero current
+
+        $$B = -\\nabla \\phi \\quad \\nabla^2 \\phi= 0 \\quad (z &gt; 0)$$
+        $$-\\hat{n}\\cdot\\nabla\\phi = B_n \\quad (z = 0)$$
+        $$\\phi(r) \\rightarrow 0 \\quad as \\quad r \\rightarrow \\infty \\quad (z = 0)$$
+
+        Use green&#39;s function for the neumann boundary condition
+        $$\\nabla^2 G_n(r, r&#39;) = 0 \\quad (z &gt; 0)$$
+        $$G_n \\rightarrow 0 \\quad as \\quad |r - r&#39;| \\rightarrow \\infty \\quad (z &gt; 0)$$
+        $$-\\hat{n}\\cdot\\nabla G_n = 0 \\quad (z = 0, r&#39; \\neq r)$$
+
+        $$-\\hat{n}\\cdot\\nabla G_n$$ 
+        
+        diverges to keep unit flux
+
+        $$lim_{z \\rightarrow 0^+}\\int\\hat{n}\\cdot\\nabla G_n(r,r&#39;)dS = 1$$
+        
+        We have the solution:
+
+        $$\\phi(r) = \\int B_n(r&#39;)G_n(r, r&#39;)dS&#39; \\quad dS&#39; = dx&#39;dy&#39; \\quad r&#39; = (x&#39;, y&#39;, 0)$$
+
+        Explicit form:
+        $$G_n(r, r&#39;) = \\frac{1}{2\\phi R} \\quad (R = |r - r&#39;|)$$
+        
+        Discrete form:
+        $$\\phi(r) \\rightarrow \\sum_{r&#39;_{ij}}B_n(r&#39;)\\tilde{G}_n(r, r&#39;_{ij})\\Delta^2$$
+        
+        and $$B_n$$ is approximated by:
+
+        $$B_n(r) \\rightarrow -\\sum_{r&#39;_{ij}}\\hat{n}\\cdot\\nabla \\tilde{G}_n(r, r&#39;_{ij})\\Delta^2 \\quad (r = (x, y, 0))$$
+        
+        $$\\tilde{G}_n(r, r&#39;_{ij}) = \\frac{1}{2\\pi |r - r&#39;_{ij} + (\\Delta/\\sqrt{2\\pi}\\hat{n})|}$$
+
+        As if there is a magnetic pole located just 
+        
+        $$\\Delta/\\sqrt{2\\pi}$$ 
+        
+        below the surface
+        &#34;&#34;&#34;
+        # Transfer to PyTorch
+        Bz = F.pad(torch.from_numpy(self.Bz), (radius, radius, radius, radius)).float()
+        Bz = Bz.to(gpu_dev)
+
+        # Distance kernel - a kernel with values filled in the &#34;circle&#34; (by def of norm) as the distance from
+        # the center multiplied by dz (for integration)
+
+        Gn = dist_kern.to(gpu_dev)
+
+        # Convolution -- integrate over each pixel
+        pot = F.conv2d(Bz[None, None, ...], Gn[None, None, ...])[0][0].cpu().numpy()
+
+        # Save potential
+        self.__potential = pot
+
+        # Get Potential Fields
+        grad = gradient(self.__potential)
+        self.__Bpx, self.__Bpy = -grad[0], -grad[1]</code></pre>
+</details>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="solarmask.active_region_parameters.ActiveRegionParameters" href="active_region_parameters.html#solarmask.active_region_parameters.ActiveRegionParameters">ActiveRegionParameters</a></li>
+</ul>
+<h3>Instance variables</h3>
+<dl>
+<dt id="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.B"><code class="name">var <span class="ident">B</span></code></dt>
+<dd>
+<div class="desc"><p>Magnitude of magnetic flux vector</p>
+<p><span><span class="MathJax_Preview">B = norm(B_x, B_y, B_z)</span><script type="math/tex; mode=display">B = norm(B_x, B_y, B_z)</script></span></p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def B(self):
+    &#34;&#34;&#34;Magnitude of magnetic flux vector
+
+    $$B = norm(B_x, B_y, B_z)$$
+    &#34;&#34;&#34;
+    if self.__B is None:
+        self.__B = self.norm((self.Bx, self.By, self.Bz))
+    return self.__B</code></pre>
+</details>
+</dd>
+<dt id="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.Bh"><code class="name">var <span class="ident">Bh</span></code></dt>
+<dd>
+<div class="desc"><p>Horizontal Magnetic Field Component</p>
+<p><span><span class="MathJax_Preview">B_h = norm(B_x, B_y)</span><script type="math/tex; mode=display">B_h = norm(B_x, B_y)</script></span></p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def Bh(self):
+    &#34;&#34;&#34;Horizontal Magnetic Field Component
+
+    $$B_h = norm(B_x, B_y)$$
+    &#34;&#34;&#34;
+    if self.__Bh is None: 
+        self.__Bh = self.norm((self.Bx, self.By))
+    return self.__Bh</code></pre>
+</details>
+</dd>
+<dt id="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.Bpx"><code class="name">var <span class="ident">Bpx</span></code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def Bpx(self):
+    if self.__Bpx is None:
+        self.greenpot()
+    return self.__Bpx</code></pre>
+</details>
+</dd>
+<dt id="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.Bpy"><code class="name">var <span class="ident">Bpy</span></code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def Bpy(self):
+    if self.__Bpy is None:
+        self.greenpot()
+    return self.__Bpy</code></pre>
+</details>
+</dd>
+<dt id="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.Bpz"><code class="name">var <span class="ident">Bpz</span></code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def Bpz(self):
+    if self.__Bpz is None:
+        self.__Bpz = self.__Bz
+    return self.__Bpz</code></pre>
+</details>
+</dd>
+<dt id="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.Bx"><code class="name">var <span class="ident">Bx</span></code></dt>
+<dd>
+<div class="desc"><p>Line of sight magnetic field</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>np.array</code></dt>
+<dd>A numpy array representing the line of sight magnetic field</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def Bx(self):
+    &#34;&#34;&#34;Line of sight magnetic field
+
+    Returns:
+        np.array: A numpy array representing the line of sight magnetic field
+    &#34;&#34;&#34;
+    return self.__Bx</code></pre>
+</details>
+</dd>
+<dt id="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.By"><code class="name">var <span class="ident">By</span></code></dt>
+<dd>
+<div class="desc"><p>Line of sight magnetic field</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>np.array</code></dt>
+<dd>A numpy array representing the line of sight magnetic field</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def By(self):
+    &#34;&#34;&#34;Line of sight magnetic field
+
+    Returns:
+        np.array: A numpy array representing the line of sight magnetic field
+    &#34;&#34;&#34;
+    return self.__By</code></pre>
+</details>
+</dd>
+<dt id="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.Bz"><code class="name">var <span class="ident">Bz</span></code></dt>
+<dd>
+<div class="desc"><p>Line of sight magnetic field</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>np.array</code></dt>
+<dd>A numpy array representing the line of sight magnetic field</dd>
+</dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def Bz(self):
+    &#34;&#34;&#34;Line of sight magnetic field
+
+    Returns:
+        np.array: A numpy array representing the line of sight magnetic field
+    &#34;&#34;&#34;
+    return self.__Bz</code></pre>
+</details>
+</dd>
+<dt id="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.J"><code class="name">var <span class="ident">J</span></code></dt>
+<dd>
+<div class="desc"><p>Vertical current density</p>
+<p><span><span class="MathJax_Preview">J_z = \frac{\partial B_y}{\partial x} - \frac{\partial B_x}{\partial y}</span><script type="math/tex; mode=display">J_z = \frac{\partial B_y}{\partial x} - \frac{\partial B_x}{\partial y}</script></span></p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def J(self):
+    &#34;&#34;&#34;Vertical current density
+
+    $$J_z = \\frac{\\partial B_y}{\\partial x} - \\frac{\\partial B_x}{\\partial y}$$
+    &#34;&#34;&#34;
+    if self.__J is None:
+        self.__J = (self.grad_By_x - self.grad_Bx_y) / mu0
+        self.__J[self.Bz == 0] = 0
+    return self.__J</code></pre>
+</details>
+</dd>
+<dt id="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.Jh"><code class="name">var <span class="ident">Jh</span></code></dt>
+<dd>
+<div class="desc"><p>Vertical heterogeneity current density</p>
+<p><span><span class="MathJax_Preview">J_z^h = \frac{1}{B}(B_y\frac{\partial B_x}{\partial y} - B_x \frac{\partial B_y}{\partial x})</span><script type="math/tex; mode=display">J_z^h = \frac{1}{B}(B_y\frac{\partial B_x}{\partial y} - B_x \frac{\partial B_y}{\partial x})</script></span></p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def Jh(self):
+    &#34;&#34;&#34;Vertical heterogeneity current density
+
+    $$J_z^h = \\frac{1}{B}(B_y\\frac{\\partial B_x}{\\partial y} - B_x \\frac{\\partial B_y}{\\partial x})$$
+    &#34;&#34;&#34;
+    if self.__Jh is None:
+        self.__Jh = (self.By * self.grad_Bx_y - self.Bx * self.grad_By_x) / mu0
+    return self.__Jh</code></pre>
+</details>
+</dd>
+<dt id="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.gamma"><code class="name">var <span class="ident">gamma</span></code></dt>
+<dd>
+<div class="desc"><p>Angle of line of magnetic flux vector from the horizontal</p>
+<p><span><span class="MathJax_Preview">\gamma = arctan(\frac{B_z}{|B_x| + |B_y|})</span><script type="math/tex; mode=display">\gamma = arctan(\frac{B_z}{|B_x| + |B_y|})</script></span></p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def gamma(self):
+    &#34;&#34;&#34;Angle of line of magnetic flux vector from the horizontal
+
+    $$\\gamma = arctan(\\frac{B_z}{|B_x| + |B_y|})$$
+    &#34;&#34;&#34;
+    if self.__gamma is None: 
+        self.__gamma = np.arctan(self.Bz / self.Bh)
+    return self.__gamma</code></pre>
+</details>
+</dd>
+<dt id="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.grad_B"><code class="name">var <span class="ident">grad_B</span></code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def grad_B(self):
+    if self.__grad_B is None:
+        self.__grad_B = self.norm((self.grad_B_x, self.grad_B_y))
+    return self.__grad_B</code></pre>
+</details>
+</dd>
+<dt id="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.grad_B_x"><code class="name">var <span class="ident">grad_B_x</span></code></dt>
+<dd>
+<div class="desc"><p>Gradient of magnetic field magnitude</p>
+<p><span><span class="MathJax_Preview">B = norm(B_x, B_y, B_z)</span><script type="math/tex; mode=display">B = norm(B_x, B_y, B_z)</script></span></p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def grad_B_x(self):
+    &#34;&#34;&#34;Gradient of magnetic field magnitude
+
+    $$B = norm(B_x, B_y, B_z)$$
+    &#34;&#34;&#34;
+    if self.__grad_B_x is None or self.__grad_B_y is None:
+        self.__grad_B_x, self.__grad_B_y = gradient(self.B)
+    return self.__grad_B_x</code></pre>
+</details>
+</dd>
+<dt id="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.grad_B_y"><code class="name">var <span class="ident">grad_B_y</span></code></dt>
+<dd>
+<div class="desc"><p>Gradient of magnetic field magnitude</p>
+<p><span><span class="MathJax_Preview">B = norm(B_x, B_y, B_z)</span><script type="math/tex; mode=display">B = norm(B_x, B_y, B_z)</script></span></p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def grad_B_y(self):
+    &#34;&#34;&#34;Gradient of magnetic field magnitude
+
+    $$B = norm(B_x, B_y, B_z)$$
+    &#34;&#34;&#34;
+    if self.__grad_B_x is None or self.__grad_B_y is None:
+        self.__grad_B_x, self.__grad_B_y = gradient(self.B)
+    return self.__grad_B_y</code></pre>
+</details>
+</dd>
+<dt id="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.grad_Bh"><code class="name">var <span class="ident">grad_Bh</span></code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def grad_Bh(self):
+    if self.__grad_Bh is None:
+        self.__grad_Bh = self.norm((self.grad_Bh_x, self.grad_Bh_y))
+    return self.__grad_Bh</code></pre>
+</details>
+</dd>
+<dt id="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.grad_Bh_x"><code class="name">var <span class="ident">grad_Bh_x</span></code></dt>
+<dd>
+<div class="desc"><p>Gradient of horizontal magnetic field</p>
+<p><span><span class="MathJax_Preview">B_h = norm(B_x, B_y)</span><script type="math/tex; mode=display">B_h = norm(B_x, B_y)</script></span></p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def grad_Bh_x(self):
+    &#34;&#34;&#34;Gradient of horizontal magnetic field
+
+    $$B_h = norm(B_x, B_y)$$
+    &#34;&#34;&#34;
+    if self.__grad_Bh_x is None or self.__grad_Bh_y is None:
+        self.__grad_Bh_x, self.__grad_Bh_y = gradient(self.Bh)
+    return self.__grad_Bh_x</code></pre>
+</details>
+</dd>
+<dt id="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.grad_Bh_y"><code class="name">var <span class="ident">grad_Bh_y</span></code></dt>
+<dd>
+<div class="desc"><p>Gradient of horizontal magnetic field</p>
+<p><span><span class="MathJax_Preview">B_h = norm(B_x, B_y)</span><script type="math/tex; mode=display">B_h = norm(B_x, B_y)</script></span></p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def grad_Bh_y(self):
+    &#34;&#34;&#34;Gradient of horizontal magnetic field
+
+    $$B_h = norm(B_x, B_y)$$
+    &#34;&#34;&#34;
+    if self.__grad_Bh_x is None or self.__grad_Bh_y is None:
+        self.__grad_Bh_x, self.__grad_Bh_y = gradient(self.Bh)
+    return self.__grad_Bh_y</code></pre>
+</details>
+</dd>
+<dt id="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.grad_Bx"><code class="name">var <span class="ident">grad_Bx</span></code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def grad_Bx(self):
+    if self.__grad_Bx is None:
+        self.__grad_Bx = self.norm((self.grad_Bx_x, self.grad_Bx_y))
+    return self.__grad_Bx</code></pre>
+</details>
+</dd>
+<dt id="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.grad_Bx_x"><code class="name">var <span class="ident">grad_Bx_x</span></code></dt>
+<dd>
+<div class="desc"><p>Gradient of line of x component of magnetic field</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def grad_Bx_x(self):
+    &#34;&#34;&#34;Gradient of line of x component of magnetic field
+    &#34;&#34;&#34;
+    if self.__grad_Bx_x is None or self.__grad_Bx_y is None:
+        self.__grad_Bx_x, self.__grad_Bx_y = gradient(self.Bx)
+    return self.__grad_Bx_x</code></pre>
+</details>
+</dd>
+<dt id="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.grad_Bx_y"><code class="name">var <span class="ident">grad_Bx_y</span></code></dt>
+<dd>
+<div class="desc"><p>Gradient of line of x component of magnetic field</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def grad_Bx_y(self):
+    &#34;&#34;&#34;Gradient of line of x component of magnetic field
+    &#34;&#34;&#34;
+    if self.__grad_Bx_x is None or self.__grad_Bx_y is None:
+        self.__grad_Bx_x, self.__grad_Bx_y = gradient(self.Bx)
+    return self.__grad_Bx_y</code></pre>
+</details>
+</dd>
+<dt id="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.grad_By"><code class="name">var <span class="ident">grad_By</span></code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def grad_By(self):
+    if self.__grad_By is None:
+        self.__grad_By = self.norm((self.grad_By_x, self.grad_By_y))
+    return self.__grad_By</code></pre>
+</details>
+</dd>
+<dt id="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.grad_By_x"><code class="name">var <span class="ident">grad_By_x</span></code></dt>
+<dd>
+<div class="desc"><p>Gradient of line of x component of magnetic field</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def grad_By_x(self):
+    &#34;&#34;&#34;Gradient of line of x component of magnetic field
+    &#34;&#34;&#34;
+    if self.__grad_By_x is None or self.__grad_By_y is None:
+        self.__grad_By_x, self.__grad_By_y = gradient(self.Bx)
+    return self.__grad_By_x</code></pre>
+</details>
+</dd>
+<dt id="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.grad_By_y"><code class="name">var <span class="ident">grad_By_y</span></code></dt>
+<dd>
+<div class="desc"><p>Gradient of line of x component of magnetic field</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def grad_By_y(self):
+    &#34;&#34;&#34;Gradient of line of x component of magnetic field
+    &#34;&#34;&#34;
+    if self.__grad_By_x is None or self.__grad_By_y is None:
+        self.__grad_By_x, self.__grad_By_y = gradient(self.Bx)
+    return self.__grad_By_y</code></pre>
+</details>
+</dd>
+<dt id="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.grad_Bz"><code class="name">var <span class="ident">grad_Bz</span></code></dt>
+<dd>
+<div class="desc"></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def grad_Bz(self):
+    if self.__grad_Bz is None:
+        self.__grad_Bz = self.norm((self.grad_Bz_x, self.grad_Bz_y))
+    return self.__grad_Bz</code></pre>
+</details>
+</dd>
+<dt id="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.grad_Bz_x"><code class="name">var <span class="ident">grad_Bz_x</span></code></dt>
+<dd>
+<div class="desc"><p>Gradient of line of site magnetic field</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def grad_Bz_x(self):
+    &#34;&#34;&#34;Gradient of line of site magnetic field
+    &#34;&#34;&#34;
+    if self.__grad_Bz_x is None or self.__grad_Bz_y is None:
+        self.__grad_Bz_x, self.__grad_Bz_y = gradient(self.Bz)
+    return self.__grad_Bz_x</code></pre>
+</details>
+</dd>
+<dt id="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.grad_Bz_y"><code class="name">var <span class="ident">grad_Bz_y</span></code></dt>
+<dd>
+<div class="desc"><p>Gradient of line of site magnetic field</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def grad_Bz_y(self):
+    &#34;&#34;&#34;Gradient of line of site magnetic field
+    &#34;&#34;&#34;
+    if self.__grad_Bz_x is None or self.__grad_Bz_y is None:
+        self.__grad_Bz_x, self.__grad_Bz_y = gradient(self.Bz)
+    return self.__grad_Bz_y</code></pre>
+</details>
+</dd>
+<dt id="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.hc"><code class="name">var <span class="ident">hc</span></code></dt>
+<dd>
+<div class="desc"><p>Current helicity</p>
+<p><span><span class="MathJax_Preview">h_c = B_z(\frac{\partial B_y}{\partial x} - \frac{\partial B_x}{\partial y})</span><script type="math/tex; mode=display">h_c = B_z(\frac{\partial B_y}{\partial x} - \frac{\partial B_x}{\partial y})</script></span></p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def hc(self):
+    &#34;&#34;&#34;Current helicity
+
+    $$h_c = B_z(\\frac{\\partial B_y}{\\partial x} - \\frac{\\partial B_x}{\\partial y})$$
+    &#34;&#34;&#34;
+    if self.__hc is None:
+        self.__hc = self.Bz * self.J
+    return self.__hc</code></pre>
+</details>
+</dd>
+<dt id="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.rho"><code class="name">var <span class="ident">rho</span></code></dt>
+<dd>
+<div class="desc"><p>Excess magnetic energy density</p>
+<p><span><span class="MathJax_Preview">\rho_e = norm(B_p - B_o)</span><script type="math/tex; mode=display">\rho_e = norm(B_p - B_o)</script></span></p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def rho(self):
+    &#34;&#34;&#34;Excess magnetic energy density
+
+    $$\\rho_e = norm(B_p - B_o)$$
+    &#34;&#34;&#34;
+    if self.__rho is None:
+        self.__rho = (self.B - self.norm((self.Bpx, self.Bpy, self.Bpz)))**2 / (8*np.pi)
+    return self.__rho</code></pre>
+</details>
+</dd>
+<dt id="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.shear"><code class="name">var <span class="ident">shear</span></code></dt>
+<dd>
+<div class="desc"><p>Shear angle</p>
+<p><span><span class="MathJax_Preview">\Psi = arccos(\frac{\vec{B_p}\cdot\vec{B_o}}{|B_o||B_p|})</span><script type="math/tex; mode=display">\Psi = arccos(\frac{\vec{B_p}\cdot\vec{B_o}}{|B_o||B_p|})</script></span></p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def shear(self):
+    &#34;&#34;&#34;Shear angle
+
+    $$\\Psi = arccos(\\frac{\\vec{B_p}\\cdot\\vec{B_o}}{|B_o||B_p|})$$
+    &#34;&#34;&#34;
+    if self.__shear is None:
+        dot = self.Bx * self.Bpx + self.By * self.Bpy + self.Bz * self.Bpz
+        magp = self.norm((self.Bpx, self.Bpy, self.Bpz))
+        self.__shear = np.arccos(dot / (self.B * magp))
+    return self.__shear</code></pre>
+</details>
+</dd>
+<dt id="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.twist"><code class="name">var <span class="ident">twist</span></code></dt>
+<dd>
+<div class="desc"><p>Twist</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@property
+def twist(self):
+    &#34;&#34;&#34;Twist
+    &#34;&#34;&#34;
+    if self.__twist is None:
+        self.__twist = np.divide(self.J, self.Bz, out = np.ones_like(self.J), where=self.Bz != 0)
+    return self.__twist</code></pre>
+</details>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.greenpot"><code class="name flex">
+<span>def <span class="ident">greenpot</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Magnetic field vector assuming zero current</p>
+<p><span><span class="MathJax_Preview">B = -\nabla \phi \quad \nabla^2 \phi= 0 \quad (z &gt; 0)</span><script type="math/tex; mode=display">B = -\nabla \phi \quad \nabla^2 \phi= 0 \quad (z > 0)</script></span>
+<span><span class="MathJax_Preview">-\hat{n}\cdot\nabla\phi = B_n \quad (z = 0)</span><script type="math/tex; mode=display">-\hat{n}\cdot\nabla\phi = B_n \quad (z = 0)</script></span>
+<span><span class="MathJax_Preview">\phi(r) \rightarrow 0 \quad as \quad r \rightarrow \infty \quad (z = 0)</span><script type="math/tex; mode=display">\phi(r) \rightarrow 0 \quad as \quad r \rightarrow \infty \quad (z = 0)</script></span></p>
+<p>Use green's function for the neumann boundary condition
+<span><span class="MathJax_Preview">\nabla^2 G_n(r, r') = 0 \quad (z &gt; 0)</span><script type="math/tex; mode=display">\nabla^2 G_n(r, r') = 0 \quad (z > 0)</script></span>
+<span><span class="MathJax_Preview">G_n \rightarrow 0 \quad as \quad |r - r'| \rightarrow \infty \quad (z &gt; 0)</span><script type="math/tex; mode=display">G_n \rightarrow 0 \quad as \quad |r - r'| \rightarrow \infty \quad (z > 0)</script></span>
+<span><span class="MathJax_Preview">-\hat{n}\cdot\nabla G_n = 0 \quad (z = 0, r' \neq r)</span><script type="math/tex; mode=display">-\hat{n}\cdot\nabla G_n = 0 \quad (z = 0, r' \neq r)</script></span></p>
+<p><span><span class="MathJax_Preview">-\hat{n}\cdot\nabla G_n</span><script type="math/tex; mode=display">-\hat{n}\cdot\nabla G_n</script></span> </p>
+<p>diverges to keep unit flux</p>
+<p><span><span class="MathJax_Preview">lim_{z \rightarrow 0^+}\int\hat{n}\cdot\nabla G_n(r,r')dS = 1</span><script type="math/tex; mode=display">lim_{z \rightarrow 0^+}\int\hat{n}\cdot\nabla G_n(r,r')dS = 1</script></span></p>
+<p>We have the solution:</p>
+<p><span><span class="MathJax_Preview">\phi(r) = \int B_n(r')G_n(r, r')dS' \quad dS' = dx'dy' \quad r' = (x', y', 0)</span><script type="math/tex; mode=display">\phi(r) = \int B_n(r')G_n(r, r')dS' \quad dS' = dx'dy' \quad r' = (x', y', 0)</script></span></p>
+<p>Explicit form:
+<span><span class="MathJax_Preview">G_n(r, r') = \frac{1}{2\phi R} \quad (R = |r - r'|)</span><script type="math/tex; mode=display">G_n(r, r') = \frac{1}{2\phi R} \quad (R = |r - r'|)</script></span></p>
+<p>Discrete form:
+<span><span class="MathJax_Preview">\phi(r) \rightarrow \sum_{r'_{ij}}B_n(r')\tilde{G}_n(r, r'_{ij})\Delta^2</span><script type="math/tex; mode=display">\phi(r) \rightarrow \sum_{r'_{ij}}B_n(r')\tilde{G}_n(r, r'_{ij})\Delta^2</script></span></p>
+<p>and <span><span class="MathJax_Preview">B_n</span><script type="math/tex; mode=display">B_n</script></span> is approximated by:</p>
+<p><span><span class="MathJax_Preview">B_n(r) \rightarrow -\sum_{r'_{ij}}\hat{n}\cdot\nabla \tilde{G}_n(r, r'_{ij})\Delta^2 \quad (r = (x, y, 0))</span><script type="math/tex; mode=display">B_n(r) \rightarrow -\sum_{r'_{ij}}\hat{n}\cdot\nabla \tilde{G}_n(r, r'_{ij})\Delta^2 \quad (r = (x, y, 0))</script></span></p>
+<p><span><span class="MathJax_Preview">\tilde{G}_n(r, r'_{ij}) = \frac{1}{2\pi |r - r'_{ij} + (\Delta/\sqrt{2\pi}\hat{n})|}</span><script type="math/tex; mode=display">\tilde{G}_n(r, r'_{ij}) = \frac{1}{2\pi |r - r'_{ij} + (\Delta/\sqrt{2\pi}\hat{n})|}</script></span></p>
+<p>As if there is a magnetic pole located just </p>
+<p><span><span class="MathJax_Preview">\Delta/\sqrt{2\pi}</span><script type="math/tex; mode=display">\Delta/\sqrt{2\pi}</script></span> </p>
+<p>below the surface</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def greenpot(self):
+    &#34;&#34;&#34;Magnetic field vector assuming zero current
+
+    $$B = -\\nabla \\phi \\quad \\nabla^2 \\phi= 0 \\quad (z &gt; 0)$$
+    $$-\\hat{n}\\cdot\\nabla\\phi = B_n \\quad (z = 0)$$
+    $$\\phi(r) \\rightarrow 0 \\quad as \\quad r \\rightarrow \\infty \\quad (z = 0)$$
+
+    Use green&#39;s function for the neumann boundary condition
+    $$\\nabla^2 G_n(r, r&#39;) = 0 \\quad (z &gt; 0)$$
+    $$G_n \\rightarrow 0 \\quad as \\quad |r - r&#39;| \\rightarrow \\infty \\quad (z &gt; 0)$$
+    $$-\\hat{n}\\cdot\\nabla G_n = 0 \\quad (z = 0, r&#39; \\neq r)$$
+
+    $$-\\hat{n}\\cdot\\nabla G_n$$ 
+    
+    diverges to keep unit flux
+
+    $$lim_{z \\rightarrow 0^+}\\int\\hat{n}\\cdot\\nabla G_n(r,r&#39;)dS = 1$$
+    
+    We have the solution:
+
+    $$\\phi(r) = \\int B_n(r&#39;)G_n(r, r&#39;)dS&#39; \\quad dS&#39; = dx&#39;dy&#39; \\quad r&#39; = (x&#39;, y&#39;, 0)$$
+
+    Explicit form:
+    $$G_n(r, r&#39;) = \\frac{1}{2\\phi R} \\quad (R = |r - r&#39;|)$$
+    
+    Discrete form:
+    $$\\phi(r) \\rightarrow \\sum_{r&#39;_{ij}}B_n(r&#39;)\\tilde{G}_n(r, r&#39;_{ij})\\Delta^2$$
+    
+    and $$B_n$$ is approximated by:
+
+    $$B_n(r) \\rightarrow -\\sum_{r&#39;_{ij}}\\hat{n}\\cdot\\nabla \\tilde{G}_n(r, r&#39;_{ij})\\Delta^2 \\quad (r = (x, y, 0))$$
+    
+    $$\\tilde{G}_n(r, r&#39;_{ij}) = \\frac{1}{2\\pi |r - r&#39;_{ij} + (\\Delta/\\sqrt{2\\pi}\\hat{n})|}$$
+
+    As if there is a magnetic pole located just 
+    
+    $$\\Delta/\\sqrt{2\\pi}$$ 
+    
+    below the surface
+    &#34;&#34;&#34;
+    # Transfer to PyTorch
+    Bz = F.pad(torch.from_numpy(self.Bz), (radius, radius, radius, radius)).float()
+    Bz = Bz.to(gpu_dev)
+
+    # Distance kernel - a kernel with values filled in the &#34;circle&#34; (by def of norm) as the distance from
+    # the center multiplied by dz (for integration)
+
+    Gn = dist_kern.to(gpu_dev)
+
+    # Convolution -- integrate over each pixel
+    pot = F.conv2d(Bz[None, None, ...], Gn[None, None, ...])[0][0].cpu().numpy()
+
+    # Save potential
+    self.__potential = pot
+
+    # Get Potential Fields
+    grad = gradient(self.__potential)
+    self.__Bpx, self.__Bpy = -grad[0], -grad[1]</code></pre>
+</details>
+</dd>
+<dt id="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.norm"><code class="name flex">
+<span>def <span class="ident">norm</span></span>(<span>self, data)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>The one norm of a set of data elements</p>
+<h2 id="args">Args</h2>
+<dl>
+<dt><strong><code>data</code></strong> :&ensp;<code>A list, tuple</code> or <code>iterable</code></dt>
+<dd>A List of elements that can be taken the absolute value of</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<p>The result of summing the application of np.abs() on all elements of data</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def norm(self, data):
+    &#34;&#34;&#34;The one norm of a set of data elements
+
+    Args:
+        data (A list, tuple or iterable): A List of elements that can be taken the absolute value of
+
+    Returns:
+        The result of summing the application of np.abs() on all elements of data
+    &#34;&#34;&#34;
+    return norm(data)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="solarmask" href="index.html">solarmask</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="solarmask.active_region_derived_fields.ActiveRegionDerivedFields" href="#solarmask.active_region_derived_fields.ActiveRegionDerivedFields">ActiveRegionDerivedFields</a></code></h4>
+<ul class="two-column">
+<li><code><a title="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.B" href="#solarmask.active_region_derived_fields.ActiveRegionDerivedFields.B">B</a></code></li>
+<li><code><a title="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.Bh" href="#solarmask.active_region_derived_fields.ActiveRegionDerivedFields.Bh">Bh</a></code></li>
+<li><code><a title="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.Bpx" href="#solarmask.active_region_derived_fields.ActiveRegionDerivedFields.Bpx">Bpx</a></code></li>
+<li><code><a title="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.Bpy" href="#solarmask.active_region_derived_fields.ActiveRegionDerivedFields.Bpy">Bpy</a></code></li>
+<li><code><a title="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.Bpz" href="#solarmask.active_region_derived_fields.ActiveRegionDerivedFields.Bpz">Bpz</a></code></li>
+<li><code><a title="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.Bx" href="#solarmask.active_region_derived_fields.ActiveRegionDerivedFields.Bx">Bx</a></code></li>
+<li><code><a title="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.By" href="#solarmask.active_region_derived_fields.ActiveRegionDerivedFields.By">By</a></code></li>
+<li><code><a title="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.Bz" href="#solarmask.active_region_derived_fields.ActiveRegionDerivedFields.Bz">Bz</a></code></li>
+<li><code><a title="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.J" href="#solarmask.active_region_derived_fields.ActiveRegionDerivedFields.J">J</a></code></li>
+<li><code><a title="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.Jh" href="#solarmask.active_region_derived_fields.ActiveRegionDerivedFields.Jh">Jh</a></code></li>
+<li><code><a title="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.gamma" href="#solarmask.active_region_derived_fields.ActiveRegionDerivedFields.gamma">gamma</a></code></li>
+<li><code><a title="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.grad_B" href="#solarmask.active_region_derived_fields.ActiveRegionDerivedFields.grad_B">grad_B</a></code></li>
+<li><code><a title="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.grad_B_x" href="#solarmask.active_region_derived_fields.ActiveRegionDerivedFields.grad_B_x">grad_B_x</a></code></li>
+<li><code><a title="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.grad_B_y" href="#solarmask.active_region_derived_fields.ActiveRegionDerivedFields.grad_B_y">grad_B_y</a></code></li>
+<li><code><a title="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.grad_Bh" href="#solarmask.active_region_derived_fields.ActiveRegionDerivedFields.grad_Bh">grad_Bh</a></code></li>
+<li><code><a title="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.grad_Bh_x" href="#solarmask.active_region_derived_fields.ActiveRegionDerivedFields.grad_Bh_x">grad_Bh_x</a></code></li>
+<li><code><a title="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.grad_Bh_y" href="#solarmask.active_region_derived_fields.ActiveRegionDerivedFields.grad_Bh_y">grad_Bh_y</a></code></li>
+<li><code><a title="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.grad_Bx" href="#solarmask.active_region_derived_fields.ActiveRegionDerivedFields.grad_Bx">grad_Bx</a></code></li>
+<li><code><a title="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.grad_Bx_x" href="#solarmask.active_region_derived_fields.ActiveRegionDerivedFields.grad_Bx_x">grad_Bx_x</a></code></li>
+<li><code><a title="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.grad_Bx_y" href="#solarmask.active_region_derived_fields.ActiveRegionDerivedFields.grad_Bx_y">grad_Bx_y</a></code></li>
+<li><code><a title="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.grad_By" href="#solarmask.active_region_derived_fields.ActiveRegionDerivedFields.grad_By">grad_By</a></code></li>
+<li><code><a title="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.grad_By_x" href="#solarmask.active_region_derived_fields.ActiveRegionDerivedFields.grad_By_x">grad_By_x</a></code></li>
+<li><code><a title="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.grad_By_y" href="#solarmask.active_region_derived_fields.ActiveRegionDerivedFields.grad_By_y">grad_By_y</a></code></li>
+<li><code><a title="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.grad_Bz" href="#solarmask.active_region_derived_fields.ActiveRegionDerivedFields.grad_Bz">grad_Bz</a></code></li>
+<li><code><a title="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.grad_Bz_x" href="#solarmask.active_region_derived_fields.ActiveRegionDerivedFields.grad_Bz_x">grad_Bz_x</a></code></li>
+<li><code><a title="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.grad_Bz_y" href="#solarmask.active_region_derived_fields.ActiveRegionDerivedFields.grad_Bz_y">grad_Bz_y</a></code></li>
+<li><code><a title="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.greenpot" href="#solarmask.active_region_derived_fields.ActiveRegionDerivedFields.greenpot">greenpot</a></code></li>
+<li><code><a title="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.hc" href="#solarmask.active_region_derived_fields.ActiveRegionDerivedFields.hc">hc</a></code></li>
+<li><code><a title="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.norm" href="#solarmask.active_region_derived_fields.ActiveRegionDerivedFields.norm">norm</a></code></li>
+<li><code><a title="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.rho" href="#solarmask.active_region_derived_fields.ActiveRegionDerivedFields.rho">rho</a></code></li>
+<li><code><a title="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.shear" href="#solarmask.active_region_derived_fields.ActiveRegionDerivedFields.shear">shear</a></code></li>
+<li><code><a title="solarmask.active_region_derived_fields.ActiveRegionDerivedFields.twist" href="#solarmask.active_region_derived_fields.ActiveRegionDerivedFields.twist">twist</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.10.0</a>.</p>
+</footer>
+</body>
+</html>
