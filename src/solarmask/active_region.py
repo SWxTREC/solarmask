@@ -3,13 +3,12 @@ from .utils import *
 from .data import *
 
 import numpy as np
-import networkx as nx
 import warnings
 
 
 
 class ActiveRegion(ActiveRegionSegments):
-    def __init__(self, hnum: int, date: datetime, root: str, data_products = ["baseline", "graph", "segmented"]):
+    def __init__(self, hnum: int, date: datetime, root: str, data_products = ["baseline", "segmented"]):
         """An Active Region is an entry point into 
         parameterization, segmentation, and graph methods. 
 
@@ -85,8 +84,6 @@ class ActiveRegion(ActiveRegionSegments):
         self.__sharps = data["sharps"]
         self.__baseline = None
         self.__segmented = None
-        self.__graph = None
-        self.__G_labels = None
 
         self.meta = {"hnum" : hnum, "date" : date, "NOAA_ARS" : data["NOAA_ARS"]}
 
@@ -119,25 +116,3 @@ class ActiveRegion(ActiveRegionSegments):
             self.__segmented.update(self.meta)
 
         return self.__segmented
-
-    @property
-    def graph_dataset(self):
-        if "graph" not in self.data_products:
-            warnings.warn("Graph is not in desired data products, skipping")
-            return None
-
-        if self.__graph is None:
-            self.nl_mask
-            self.umbra_mask
-            self.penumbra_mask
-
-            for i in range(len(self.node_masks)):
-                print("here")
-                data = self.physical_features(self.node_masks[i], "graph_")
-                labels, v = list(data.keys()), np.array(list(data.values()))
-                nx.set_node_attributes(self._G, {i : v}, "data")
-                if self.__G_labels is None:
-                    self.__G_labels = labels
-            self.__graph = {"node_labels" : self.__G_labels, "graph" : self._G}
-            self.__graph.update(self.meta)
-        return self.__graph

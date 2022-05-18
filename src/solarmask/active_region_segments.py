@@ -6,17 +6,14 @@ from .active_region_parameters import ActiveRegionParameters
 from skimage.morphology import square, binary_dilation
 from skimage.measure import label
 import numpy as np
-import networkx as nx
 
 from skimage.filters import threshold_local
 from skimage.morphology import square
 from skimage.measure import label
-import matplotlib.pyplot as plt
-
 
 
 class ActiveRegionSegments(ActiveRegionParameters):
-    def __init__(self, Bz, Bx, By, cont, data_products = ["baseline", "graph", "segmented"]):
+    def __init__(self, Bz, Bx, By, cont, data_products = ["baseline", "segmented"]):
         super().__init__(Bz, Bx, By) 
 
         # All the data products the user wants to generate
@@ -29,15 +26,6 @@ class ActiveRegionSegments(ActiveRegionParameters):
         self.__umbra = None
         self.__penumbra = None
         self.__nl = None
-
-        # The node number index is the index of the graph mask - I'm seperating graph
-        # and mask so that the masks aren't saved when I save the graph
-        self.__node_masks = []
-        self._G = nx.Graph()
-
-        # Flags - to check and examine by eye?
-        # If something weird happened - put true here
-        self.__flags = {"bordered_umbras" : False}
 
     @property
     def nl_mask(self):
@@ -59,16 +47,6 @@ class ActiveRegionSegments(ActiveRegionParameters):
             if "segmented" in self.data_products:
                 nl_mask = binary_dilation(self.Bz < -thresh, square(radius)) & binary_dilation(self.Bz > thresh, square(radius))
                 self.__nl = nl_mask.copy()
-
-            ######### GRAPH DATA SET ################
-            if "graph" in self.data_products:
-                labeled, labels, sizes = self.__group_pixels(nl_mask)
-                labels, sizes = self.__remove_small_groups(labeled, labels, sizes, 200)
-
-                # Add all the graph nodes
-                for i in labels:
-                    mask = labeled == i
-                    self.__add_node(mask, "neutral line")
 
         return self.__nl
 
@@ -98,15 +76,6 @@ class ActiveRegionSegments(ActiveRegionParameters):
     def baseline_mask(self):
         return self.__baseline
 
-    @property
-    def node_masks(self):
-        """Getter for node masks
-
-        Returns:
-            np.array: A list of masks lining up to each of the node indexes / node names
-        """
-        return self.__node_masks
-    
     def __assert_umbra_penumbra(self):
         """An original algorithm for detecting umbras and penumbras from a continuum image
 
@@ -163,38 +132,21 @@ class ActiveRegionSegments(ActiveRegionParameters):
                 um = mask & (self.cont <= t)
                 pu = mask & (self.cont > t)
 
-                # Small group
+                # Small group = Pore (no penumbra)
                 if np.count_nonzero(um) < 50:
-                    if "graph" in self.data_products:
-                        self.__add_node(mask, "umbra")
+                    pass
 
                 # PENUMBRA AND UMBRA
                 elif mx - mn > 21000:
                     # Both umbra and penumbra
-                    self.__umbra &= ~pu
                     self.__penumbra |= pu
-
-                    if "graph" in self.data_products:
-                        # Further segment the umbra node again
-                        labeled, labels, sizes = self.__group_pixels(pu)
-                        labels, sizes = self.__remove_small_groups(labeled_0, labels, sizes, 100)
-
-                        for i in labels:
-                            mask = labeled == i
-                            self.__add_node(mask, "penumbra")
-
-                        # Further segment the umbra node again
-                        labeled, labels, sizes = self.__group_pixels(um)
-                        labels, sizes = self.__remove_small_groups(labeled_0, labels, sizes, 50)
-
-                        for i in labels:
-                            mask = labeled == i
-                            self.__add_node(mask, "umbra")
 
                 # ONLY UMBRA
                 else:
-                    if "graph" in self.data_products:
-                        self.__add_node(mask, "umbra")
+                    pass
+
+            # What is not penumbra is umbra
+            self.__umbra &= ~self.__penumbra
             
 
     def __group_pixels(self, mask):
@@ -294,34 +246,6 @@ class ActiveRegionSegments(ActiveRegionParameters):
         a = np.partition(sizes, -n)[-n]
         return labels[sizes >= a], sizes[sizes >= a]
 
-    def __add_node(self, mask, type):
-        """Adds a node to self graph and connects to all the previous nodes
-
-        Args:
-            data ([type]): [description]
-            cur_node ([type]): [description]
-            mask ([type]): [description]
-
-        Returns:
-            [type]: [description]
-        """
-        cur_node = len(self.__node_masks)
-
-        # Get the center of the node for plotting
-        x, y = np.where(mask)
-        x, y = int(np.mean(x)), int(np.mean(y))
-        self._G.add_node(cur_node, pos = (y,x), type = type)
-
-        mask_dil = binary_dilation(mask, square(3))
-
-        for m in range(len(self.__node_masks)):
-            shares_edge = np.count_nonzero(mask_dil & self.__node_masks[m]) > 0
-            if shares_edge:
-                self._G.add_edge(cur_node, m)
-
-        self.__node_masks.append(mask_dil)
-
-
     def draw(self, axs):
         axs[0][0].imshow(self.cont, interpolation = "none")
         axs[0][1].imshow(self.Bz, interpolation = "none")
@@ -329,23 +253,3 @@ class ActiveRegionSegments(ActiveRegionParameters):
         axs[1][1].imshow(self.penumbra_mask, interpolation = "none")
         axs[2][0].imshow(self.nl_mask, interpolation = "none")
         axs[2][1].imshow(self.background_mask, interpolation = "none")
-
-        color_keys = {"penumbra" : "red", "umbra" : "green", "neutral line" : "blue"}
-        values = [color_keys.get(x[1]["type"]) for x in self._G.nodes.data()]
-        pos = nx.get_node_attributes(self._G, "pos")
-        pos = {i : (pos[i][0], pos[i][1]) for i in pos}
-
-        
-        axs[3][0].imshow(self.cont, interpolation = "none")
-        axs[3][1].imshow(self.Bz, interpolation = "none")
-        nx.draw(self._G, pos, axs[3][0], node_size = 100, node_color = values, with_labels = False)
-        nx.draw(self._G, pos, axs[3][1], node_size = 100, node_color = values, with_labels = False)
-
-        for a in axs:
-            for ax in a:
-                ax.axis(False)
-        
-
-    
-
-

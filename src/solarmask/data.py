@@ -63,7 +63,8 @@ sharps_features = [ "USFLUX",\
                     "MEANPOT",\
                     "TOTPOT",\
                     "MEANSHR",\
-                    "SHRGT45"]
+                    "SHRGT45",\
+                    "R_VALUE"]
 
 sharps_features_errors = ["ERRVF",\
                     "ERRGAM",\
