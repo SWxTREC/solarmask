@@ -22,13 +22,16 @@ sharps_df = pd.DataFrame()
 kernel = square(5)
 
 # Generate sharps dataset
-for n, hnum in enumerate(hnums[0:10]):
+for n, hnum in enumerate(hnums):
 
     dates = get_dates(hnum, "/srv/data/thli2739")
     
     for nn, date in enumerate(dates):
+        
+
+
         date_str = date.strftime("%Y%m%d_%H%M%S")
-        sys.stdout.write(f"\rHnum {hnum}: {(n*100)/len(hnums):.2f}% -- Date {date_str}: {(nn*100)/len(dates):.2f}%")
+        sys.stdout.write(f"\rHnum {hnum}: {n} - {(n*100)/len(hnums):.2f}% -- Date {date_str}: {nn} - {(nn*100)/len(dates):.2f}%")
         filename = os.path.join("/srv/data/thli2739/magnetogram", f"sharp_{hnum}", f"hmi.sharp_cea_720s.{hnum}.{date_str}_TAI.Br.fits")
 
         with fits.open(filename) as hdul:
@@ -44,13 +47,7 @@ for n, hnum in enumerate(hnums[0:10]):
             # GET NEUTRAL LINE
             Bz = np.array(hdul[1].data)
 
-        
-
         nl_mask = binary_dilation(Bz < -150, kernel) & binary_dilation(Bz > 150, kernel)
-
-        if hnum == 3344 and date == datetime(2013, 11, 10, 2, 0, 0):
-            plt.imshow(nl_mask)
-            plt.savefig("orig.png")
 
         write_mask(nl_mask, hnum, date, "/srv/data/thli2739")
 

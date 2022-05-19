@@ -6,6 +6,7 @@ import numpy as np
 import warnings
 from astropy.io.fits.verify import VerifyWarning
 from bitstring import BitArray
+import time
 
 # If set to true, includes the sharps features errors
 # as well as the physical values
@@ -135,7 +136,9 @@ def get_data(harpnum, date, root):
 def write_mask(mask: np.array, hnum: int, date: str, root: str):
     date_str = date.strftime("%Y%m%d_%H%M%S")
     shape = mask.shape
+
     mask = mask.flatten()
+
 
     sharp_folder = os.path.join(root, "neutral_line", f"sharp_{hnum}")
 
@@ -144,13 +147,20 @@ def write_mask(mask: np.array, hnum: int, date: str, root: str):
 
     outputfile = os.path.join(sharp_folder, f"nl_{hnum}_{date_str}.bin")
 
-    nl_mask_str = "".join(np.pad(mask, (8 - len(mask) % 8, 0), "constant", constant_values = (0,0)).astype(int).astype(str))
+    if np.count_nonzero(mask) == 0:
+        mask = b""
+    else:
+        
+        mask = np.pad(mask, (8 - len(mask) % 8, 0), "constant", constant_values = (0,0))
+        mask = mask.reshape(-1, 8)
+        mask = np.packbits(mask).tobytes()
+
 
     # First 8 bytes specifies the shape of the mask
-    prefix = shape[0].to_bytes(4, "little") + shape[1].to_bytes(4, "little")
+    prefix = shape[0].to_bytes(4, "big") + shape[1].to_bytes(4, "big")
 
     with open(outputfile, "wb") as fp:
-        fp.write(prefix + BitArray(bin=nl_mask_str).bytes)
+        fp.write(prefix + mask)
 
 
 def read_mask(hnum: int, date: datetime, root: str):
@@ -167,8 +177,13 @@ def read_mask(hnum: int, date: datetime, root: str):
     with open(readfile, "rb") as fp:
         data = fp.read()
 
-    prefix, mask = data[0:8], data[8:]
-    shape = (int.from_bytes(prefix[0:4], "little"), int.from_bytes(prefix[4:], "little"))
+    prefix = data[0:8]
+    shape = (int.from_bytes(prefix[0:4], "big"), int.from_bytes(prefix[4:], "big"))
+
+    if len(data) <= 8:
+        return np.zeros(shape, dtype = bool)
+
+    mask = data[8:]
 
     return np.array(BitArray(mask))[-shape[0]*shape[1]:].reshape(shape)
 
