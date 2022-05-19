@@ -5,6 +5,8 @@ from skimage.morphology import square, binary_dilation
 import matplotlib.pyplot as plt
 from bitstring import BitArray
 import sys
+from datetime import datetime
+import matplotlib.pyplot as plt
 
 
 # For opening fits files
@@ -45,6 +47,10 @@ for n, hnum in enumerate(hnums[0:10]):
         
 
         nl_mask = binary_dilation(Bz < -150, kernel) & binary_dilation(Bz > 150, kernel)
+
+        if hnum == 3344 and date == datetime(2013, 11, 10, 2, 0, 0):
+            plt.imshow(nl_mask)
+            plt.savefig("orig.png")
 
         write_mask(nl_mask, hnum, date, "/srv/data/thli2739")
 
