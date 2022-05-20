@@ -104,7 +104,7 @@ plt.show()
 
 
     
-![png](https://raw.githubusercontent.com/SWxTREC/solarmask/master/docs/guides/output_14_0.png)
+![png](https://raw.githubusercontent.com/SWxTREC/solarmask/master/docs/guide/output_14_0.png)
     
 
 
@@ -175,7 +175,7 @@ plt.show()
 
 
     
-![png](https://raw.githubusercontent.com/SWxTREC/solarmask/master/docs/guides/output_20_0.png)
+![png](https://raw.githubusercontent.com/SWxTREC/solarmask/master/docs/guide/output_20_0.png)
     
 
 
@@ -200,7 +200,7 @@ plt.show()
 
 
     
-![png](https://raw.githubusercontent.com/SWxTREC/solarmask/master/docs/guides/output_21_0.png)
+![png](https://raw.githubusercontent.com/SWxTREC/solarmask/master/docs/guide/output_21_0.png)
     
 
 
@@ -229,7 +229,7 @@ plt.show()
 
 
     
-![png](https://raw.githubusercontent.com/SWxTREC/solarmask/master/docs/guides/output_22_0.png)
+![png](https://raw.githubusercontent.com/SWxTREC/solarmask/master/docs/guide/output_22_0.png)
     
 
 
@@ -254,7 +254,7 @@ plt.show()
 
 
     
-![png](https://raw.githubusercontent.com/SWxTREC/solarmask/master/docs/guides/output_23_0.png)
+![png](https://raw.githubusercontent.com/SWxTREC/solarmask/master/docs/guide/output_23_0.png)
     
 
 
@@ -293,7 +293,7 @@ plt.show()
 
 
     
-![png](https://raw.githubusercontent.com/SWxTREC/solarmask/master/docs/guides/output_26_0.png)
+![png](https://raw.githubusercontent.com/SWxTREC/solarmask/master/docs/guide/output_26_0.png)
     
 
 
@@ -320,7 +320,7 @@ plt.show()
 
 
     
-![png](https://raw.githubusercontent.com/SWxTREC/solarmask/master/docs/guides/output_28_0.png)
+![png](https://raw.githubusercontent.com/SWxTREC/solarmask/master/docs/guide/output_28_0.png)
     
 
 
@@ -416,7 +416,7 @@ for func in ar.stat_moments:
 
 
     
-![png](https://raw.githubusercontent.com/SWxTREC/solarmask/master/docs/guides/output_33_1.png)
+![png](https://raw.githubusercontent.com/SWxTREC/solarmask/master/docs/guide/output_33_1.png)
     
 
 
@@ -437,7 +437,7 @@ for func in ar.stat_moments:
 
 
     
-![png](https://raw.githubusercontent.com/SWxTREC/solarmask/master/docs/guides/output_33_3.png)
+![png](https://raw.githubusercontent.com/SWxTREC/solarmask/master/docs/guide/output_33_3.png)
     
 
 
@@ -458,7 +458,7 @@ for func in ar.stat_moments:
 
 
     
-![png](https://raw.githubusercontent.com/SWxTREC/solarmask/master/docs/guides/output_33_5.png)
+![png](https://raw.githubusercontent.com/SWxTREC/solarmask/master/docs/guide/output_33_5.png)
     
 
 
@@ -479,7 +479,7 @@ for func in ar.stat_moments:
 
 
     
-![png](https://raw.githubusercontent.com/SWxTREC/solarmask/master/docs/guides/output_33_7.png)
+![png](https://raw.githubusercontent.com/SWxTREC/solarmask/master/docs/guide/output_33_7.png)
     
 
 
@@ -500,7 +500,7 @@ for func in ar.stat_moments:
 
 
     
-![png](https://raw.githubusercontent.com/SWxTREC/solarmask/master/docs/guides/output_33_9.png)
+![png](https://raw.githubusercontent.com/SWxTREC/solarmask/master/docs/guide/output_33_9.png)
     
 
 
@@ -521,7 +521,7 @@ for func in ar.stat_moments:
 
 
     
-![png](https://raw.githubusercontent.com/SWxTREC/solarmask/master/docs/guides/output_33_11.png)
+![png](https://raw.githubusercontent.com/SWxTREC/solarmask/master/docs/guide/output_33_11.png)
     
 
 
@@ -542,7 +542,7 @@ for func in ar.stat_moments:
 
 
     
-![png](https://raw.githubusercontent.com/SWxTREC/solarmask/master/docs/guides/output_33_13.png)
+![png](https://raw.githubusercontent.com/SWxTREC/solarmask/master/docs/guide/output_33_13.png)
     
 
 
@@ -563,7 +563,7 @@ for func in ar.stat_moments:
 
 
     
-![png](https://raw.githubusercontent.com/SWxTREC/solarmask/master/docs/guides/output_33_15.png)
+![png](https://raw.githubusercontent.com/SWxTREC/solarmask/master/docs/guide/output_33_15.png)
     
 
 
@@ -584,7 +584,7 @@ for func in ar.stat_moments:
 
 
     
-![png](https://raw.githubusercontent.com/SWxTREC/solarmask/master/docs/guides/output_33_17.png)
+![png](https://raw.githubusercontent.com/SWxTREC/solarmask/master/docs/guide/output_33_17.png)
     
 
 
@@ -605,7 +605,7 @@ for func in ar.stat_moments:
 
 
     
-![png](https://raw.githubusercontent.com/SWxTREC/solarmask/master/docs/guides/output_33_19.png)
+![png](https://raw.githubusercontent.com/SWxTREC/solarmask/master/docs/guide/output_33_19.png)
     
 
 
@@ -626,7 +626,7 @@ for func in ar.stat_moments:
 
 
     
-![png](https://raw.githubusercontent.com/SWxTREC/solarmask/master/docs/guides/output_33_21.png)
+![png](https://raw.githubusercontent.com/SWxTREC/solarmask/master/docs/guide/output_33_21.png)
     
 
 
@@ -647,7 +647,7 @@ for func in ar.stat_moments:
 
 
     
-![png](https://raw.githubusercontent.com/SWxTREC/solarmask/master/docs/guides/output_33_23.png)
+![png](https://raw.githubusercontent.com/SWxTREC/solarmask/master/docs/guide/output_33_23.png)
     
 
 
