@@ -203,10 +203,8 @@ class ActiveRegionSegments(ActiveRegionParameters):
             rows, cols = np.where(labeled == labels[i])
             if min(rows) == 0 or min(cols) == 0:
                 bordered.append(i)
-                self.__flags["bordered_umbras"] = True
             if max(cols) == self.shape[1] - 1 or max(rows) == self.shape[0] - 1:
                 bordered.append(i)
-                self.__flags["bordered_umbras"] = True
         return np.delete(labels, bordered), np.delete(sizes, bordered)
 
     def __remove_percentage_max(self, labeled, labels, sizes, p = 0.01):

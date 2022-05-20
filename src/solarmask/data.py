@@ -140,12 +140,12 @@ def write_mask(mask: np.array, hnum: int, date: str, root: str):
     mask = mask.flatten()
 
 
-    sharp_folder = os.path.join(root, "neutral_line", f"sharp_{hnum}")
+    sharp_folder = os.path.join(root, f"sharp_{hnum}")
 
     if not os.path.exists(sharp_folder):
         os.makedirs(sharp_folder)
 
-    outputfile = os.path.join(sharp_folder, f"nl_{hnum}_{date_str}.bin")
+    outputfile = os.path.join(sharp_folder, f"mask_{hnum}_{date_str}.bin")
 
     if np.count_nonzero(mask) == 0:
         mask = b""
@@ -165,11 +165,11 @@ def write_mask(mask: np.array, hnum: int, date: str, root: str):
 
 def read_mask(hnum: int, date: datetime, root: str):
     date_str = date.strftime("%Y%m%d_%H%M%S")
-    sharp_folder = os.path.join(root, "neutral_line", f"sharp_{hnum}")
+    sharp_folder = os.path.join(root, f"sharp_{hnum}")
     if not os.path.exists(sharp_folder):
         raise Exception(f"Invalid harpnumber {hnum}")
 
-    readfile = os.path.join(sharp_folder, f"nl_{hnum}_{date_str}.bin")
+    readfile = os.path.join(sharp_folder, f"mask_{hnum}_{date_str}.bin")
 
     if not os.path.exists(readfile):
         raise Exception(f"Invalid harpnumber {hnum}")
